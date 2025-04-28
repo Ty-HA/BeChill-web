@@ -2,8 +2,8 @@ import './globals.css';
 import Providers from '@/components/Providers';
 
 export const metadata = {
-  title: 'BeChill - Connexion Privy',
-  description: 'Connexion Web3 via Privy pour démonstration',
+  title: 'BeChill - Your Personal Asset Manager',
+  description: 'Take control of your digital assets with our AI-powered manager powered by Solana',
 };
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
