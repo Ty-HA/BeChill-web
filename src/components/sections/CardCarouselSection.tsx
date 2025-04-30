@@ -1,5 +1,8 @@
+"use client";
 import { Card, CardContent } from "@/components/ui/Card";
-import { motion } from "framer-motion";
+import { motion, useAnimation } from "framer-motion";
+import { useEffect, useState, useRef } from "react";
+import { useInView } from "react-intersection-observer";
 
 export function CardCarouselSection() {
   const cards = [
@@ -35,53 +38,113 @@ export function CardCarouselSection() {
     },
   ];
 
-  return (
-    <div className="py-10 overflow-hidden font-serif">
-      <div className="container mx-auto px-4">
-        {[0, 1].map((rowIndex) => (
-          <div
-            key={rowIndex}
-            className={`flex flex-wrap md:flex-nowrap gap-4 justify-center ${rowIndex === 1 ? "mt-4" : ""}`}
-          >
-            {cards.slice(rowIndex * 3, rowIndex * 3 + 3).map((card, i) => (
-              <motion.div
-                key={card.id}
-                className="w-full md:w-1/3 mb-4 md:mb-0"
-                initial={{ y: -30, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.2 * (rowIndex * 3 + i), duration: 0.6, ease: "easeOut" }}
-              >
-                <Card className={`${card.bgColor} h-full shadow-md rounded-xl`}>
-                  <CardContent className="p-6">
-                    <p className="text-lg">{card.text}</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
+  const duplicatedCards = [...cards, ...cards];
+  const [scrollDirection, setScrollDirection] = useState<"up" | "down">("down");
+  const lastScrollTop = useRef(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScroll = window.scrollY;
+      const delta = currentScroll - lastScrollTop.current;
+      if (Math.abs(delta) > 5) {
+        setScrollDirection(delta > 0 ? "down" : "up");
+        lastScrollTop.current = currentScroll;
+      }
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const controls1 = useAnimation();
+  const controls2 = useAnimation();
+  const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.3 });
+
+  useEffect(() => {
+    if (!inView) return;
+    if (scrollDirection === "down") {
+      controls1.start({
+        x: ["0%", "-50%"],
+        transition: { repeat: Infinity, duration: 100, ease: "linear" },
+      });
+      controls2.start({
+        x: ["-50%", "0%"],
+        transition: { repeat: Infinity, duration: 100, ease: "linear" },
+      });
+    } else {
+      controls1.start({
+        x: ["-50%", "0%"],
+        transition: { repeat: Infinity, duration: 100, ease: "linear" },
+      });
+      controls2.start({
+        x: ["0%", "-50%"],
+        transition: { repeat: Infinity, duration: 100, ease: "linear" },
+      });
+    }
+  }, [inView, scrollDirection]);
+
+  const renderRow = (items: typeof cards, controls: any, reverse?: boolean) => (
+    <motion.div
+      animate={controls}
+      className="flex gap-4 w-max will-change-transform"
+      style={{ flexDirection: reverse ? "row-reverse" : "row" }}
+    >
+      {items.map((card, i) => (
+        <motion.div
+          key={`${card.id}-${i}`}
+          className="w-72 shrink-0 z-10 relative overflow-visible"
+          whileHover={{ scale: 1.05 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        >
+          <div className="overflow-visible">
+            <Card
+              className={`${card.bgColor} shadow-md rounded-xl overflow-visible h-48`}
+            >
+              <CardContent className="p-6 flex flex-col justify-between h-full">
+                <p className="text-lg">{card.text}</p>
+              </CardContent>
+            </Card>
           </div>
-        ))}
+        </motion.div>
+      ))}
+    </motion.div>
+  );
+
+  return (
+    <div ref={ref} className="font-serif overflow-x-hidden relative py-16">
+      <div className="space-y-4">
+        {/* Ligne 1 */}
+        <div className="overflow-visible">
+          {renderRow(duplicatedCards, controls1)}
+        </div>
+
+        {/* Ligne 2 */}
+        <div className="overflow-visible">
+          {renderRow(duplicatedCards, controls2, true)}
+        </div>
       </div>
 
-      <div className="text-center mt-16 mb-8">
+      <div className="text-center mt-16 mb-2">
         <motion.p
-          className="text-lg font-semibold"
+          className="text-xl font-semibold"
           initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 1.2, duration: 0.6 }}
+          whileInView={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.6 }}
         >
           Finally — crypto vibes that don’t wreck your peace of mind.
         </motion.p>
-        <div className="mt-2 flex justify-center">
-          <motion.svg
+        <motion.div
+          className="mt-6 flex justify-center"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+        >
+          <svg
             width="24"
             height="24"
             viewBox="0 0 24 24"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
             className="animate-bounce"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.4 }}
           >
             <path
               d="M12 5V19M12 19L5 12M12 19L19 12"
@@ -90,8 +153,8 @@ export function CardCarouselSection() {
               strokeLinecap="round"
               strokeLinejoin="round"
             />
-          </motion.svg>
-        </div>
+          </svg>
+        </motion.div>
       </div>
     </div>
   );

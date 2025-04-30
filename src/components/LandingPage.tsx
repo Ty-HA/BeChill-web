@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLogin, useLogout, usePrivy } from "@privy-io/react-auth";
 import PrivyGate from "@/components/PrivyGate";
 import HeroSection from "./sections/HeroSection";
@@ -19,6 +19,7 @@ export default function LandingPage() {
   const { logout } = useLogout();
   const { user } = usePrivy();
   const typedUser = user as any as PrivyUser | null;
+  const isInitialMount = useRef(true);
   
   // État pour suivre si l'analyse a été demandée explicitement
   const [walletReviewed, setWalletReviewed] = useState(false);
@@ -41,6 +42,25 @@ export default function LandingPage() {
   const saveMessages = (messages: any[]) => {
     setSavedMessages(messages);
   };
+
+  // Gestion du scroll initial - version plus équilibrée
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      
+      // Scroll immédiat au chargement
+      if (typeof window !== "undefined") {
+        window.scrollTo(0, 0);
+      }
+      
+      // Un seul scroll supplémentaire avec un délai
+      const timer = setTimeout(() => {
+        window.scrollTo(0, 0);
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, []);
   
   // Réinitialiser l'état d'analyse lors de la déconnexion
   useEffect(() => {
@@ -51,18 +71,17 @@ export default function LandingPage() {
 
   return (
     <PrivyGate>
-    <main className="min-h-screen overflow-hidden">
+    <main className="min-h-screen">
       <HeroSection
         userWallet={typedUser?.wallet?.address || null}
         onLogin={login}
         onLogout={logout}
         walletReviewed={walletReviewed}
       />
-    
-        <CardCarouselSection />
-
+    <CardCarouselSection />
+        
       <section className="container mx-auto px-4 py-12 flex justify-center">
-        <ChatComponent
+      <ChatComponent
           userWallet={typedUser?.wallet?.address || null}
           className="w-full max-w-md shadow-lg"
           onRequestWalletConnect={login}
@@ -71,9 +90,9 @@ export default function LandingPage() {
           onMessagesUpdate={saveMessages}
         />
       </section>
-      <Footer />
-     
+      
     </main>
+    <Footer />
   </PrivyGate>
   );
 }

@@ -14,7 +14,7 @@ export default function HeroSection({
   walletReviewed,
 }: HeroSectionProps) {
   return (
-    <section className="container mx-auto px-4 py-16 min-h-screen flex items-center justify-center">
+    <section className="container mx-auto px-4 py-16 min-h-11/12 flex items-center justify-center">
       <div className="flex flex-col items-center justify-center text-center w-full max-w-3xl">
         <div className="flex justify-center mb-6 items-center">
           <div className="relative w-28 h-28 rounded-full flex items-center justify-center mr-3">
@@ -32,12 +32,12 @@ export default function HeroSection({
         <h1 className="md:text-6xl text-4xl font-bold mb-8 text-purple-900 font-serif">
           <span className="block">Chill,</span>
           <span className="block">your personal asset manager</span>
-          <span className="block">powered by Solana.</span>
+          <span className="block">powered by Solana</span>
         </h1>
 
         <p className="text-xl mb-10 text-purple-900 max-w-lg font-serif">
           Take control of your digital assets with our AI-powered manager.
-          Track, analyze, and optimize your portfolio with just a few clicks.
+          Track, analyze, and optimize your portfolio with just a few clicks
         </p>
 
         {!userWallet ? (
