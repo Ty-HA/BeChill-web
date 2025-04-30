@@ -263,7 +263,7 @@ export default function ChatComponent({
   // Final render
   return (
     <div
-      className={`${
+      className={`font-serif ${
         isFloating ? "fixed bottom-4 right-4 z-20" : ""
       } ${className}`}
     >
