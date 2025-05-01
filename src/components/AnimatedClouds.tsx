@@ -28,7 +28,7 @@ export default function AnimatedClouds() {
           size: 0.8,
           speed: 0.2,
           direction: 'ltr',
-          zIndex: 0
+          zIndex: -10
         },
         {
           id: 2,
@@ -37,7 +37,7 @@ export default function AnimatedClouds() {
           size: 1.2,
           speed: 0.15,
           direction: 'rtl',
-          zIndex: 1
+          zIndex: -9
         },
         {
           id: 3,
@@ -46,7 +46,7 @@ export default function AnimatedClouds() {
           size: 0.6,
           speed: 0.25,
           direction: 'ltr',
-          zIndex: 0
+          zIndex: -10
         },
         {
           id: 4,
@@ -55,7 +55,7 @@ export default function AnimatedClouds() {
           size: 1.0,
           speed: 0.18,
           direction: 'rtl',
-          zIndex: 1
+          zIndex: -9
         },
         {
           id: 5,
@@ -64,7 +64,7 @@ export default function AnimatedClouds() {
           size: 0.7,
           speed: 0.22,
           direction: 'ltr',
-          zIndex: 0
+          zIndex: -10
         }
       ];
       
@@ -145,7 +145,7 @@ export default function AnimatedClouds() {
   };
 
   return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none">
+    <div className="fixed inset-0 overflow-hidden pointer-events-none" style={{ zIndex: -20 }}>
       {clouds.map(cloud => (
         <Cloud key={cloud.id} cloud={cloud} />
       ))}

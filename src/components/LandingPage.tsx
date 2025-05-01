@@ -72,10 +72,11 @@ export default function LandingPage() {
 
   return (
     <PrivyGate>
-    <main className="min-h-screen relative">
+    <main className="min-h-screen relative overflow-hidden">
       {/* Add the AnimatedClouds component here */}
       <AnimatedClouds />
       
+      <div className="relative z-10">
       <HeroSection
         userWallet={typedUser?.wallet?.address || null}
         onLogin={login}
@@ -95,6 +96,7 @@ export default function LandingPage() {
         />
       </section>
       
+      </div>
     </main>
     <Footer />
   </PrivyGate>
