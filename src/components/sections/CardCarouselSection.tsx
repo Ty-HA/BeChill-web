@@ -110,7 +110,7 @@ export function CardCarouselSection() {
   );
 
   return (
-    <div ref={ref} className="font-serif overflow-x-hidden relative py-16">
+    <div ref={ref} className="font-serif overflow-x-hidden relative py-4">
       <div className="space-y-4">
         {/* Ligne 1 */}
         <div className="overflow-visible">
