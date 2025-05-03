@@ -41,7 +41,13 @@ const BeChillDashboard = () => {
   });
   
   // Progress bar component
-  const ProgressBar = ({ progress, color, height = 'h-4' }) => (
+  interface ProgressBarProps {
+    progress: number;
+    color: string;
+    height?: string;
+  }
+  
+  const ProgressBar = ({ progress, color, height = 'h-4' }: ProgressBarProps) => (
     <div className={`w-full bg-gray-100 rounded-full ${height}`}>
       <div 
         className={`${color} rounded-full ${height}`} 
@@ -51,7 +57,7 @@ const BeChillDashboard = () => {
   );
 
   // Asset icon component
-  const AssetIcon = ({ symbol }) => {
+  const AssetIcon = ({ symbol }: { symbol: string }) => {
     const getColor = () => {
       if (symbol === 'Solana') return 'bg-[#7036cd]';
       if (symbol === 'Jupiter' || symbol === 'JUP') return 'bg-[#FFFF4F]';
