@@ -288,7 +288,7 @@ export default function WalletTester() {
           />
           <button
             onClick={() => {
-              setWalletAddress('9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin');
+              setWalletAddress('FuRS2oiXnGvwabV7JYjBU1VQCa6aida7LDybt91xy1YH');
             }}
             className="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200"
           >
