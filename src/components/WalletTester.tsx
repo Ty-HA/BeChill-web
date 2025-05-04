@@ -225,10 +225,16 @@ export default function WalletTester() {
         setResult(data);
       }
     } catch (err: any) {
-      console.error("API call error:", err);
-      setError(err.message || 'An error occurred');
-      setResult(null);
-    } finally {
+        const isResponseError = err?.response?.status;
+        const errorMessage = isResponseError
+          ? `Error ${err.response.status}: ${err.response.statusText}`
+          : err?.message || 'An error occurred';
+      
+        console.error("API call error:", err);
+        setError(errorMessage);
+        setResult(null);
+      }
+       finally {
       setLoading(false);
       
       // Scroll to the results section
@@ -483,52 +489,53 @@ export default function WalletTester() {
         )}
       </div>
 
-      {/* Results Section */}
-      <div id="results-section" className="p-4 bg-white rounded-lg shadow">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-purple-700">Results</h2>
-          <div className="flex gap-2">
-            {activeEndpoint && (
-              <span className="px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-full">
-                {activeEndpoint}
-              </span>
-            )}
-            {(result || error) && (
-              <button
-                onClick={clearResults}
-                className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded-full hover:bg-gray-300"
-              >
-                Clear
-              </button>
-            )}
-          </div>
-        </div>
-        
-        {loading && (
-          <div className="flex justify-center items-center h-32">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
-          </div>
-        )}
-        
-        {error && !loading && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-md text-red-600">
-            <p className="font-medium">Error:</p>
-            <p>{error}</p>
-          </div>
-        )}
-        
-        {result && !loading && !error && (
-          <div className="overflow-auto" style={{ maxHeight: '500px' }}>
-            <JsonViewer data={result} expandedDepth={2} />
-          </div>
-        )}
-        
-        {!result && !loading && !error && (
-          <div className="p-8 text-center text-gray-500">
-            <p>Select an endpoint to see results here</p>
-          </div>
-        )}
-      </div>
+    {/* Results Section */}
+<div id="results-section" className="p-4 bg-white rounded-lg shadow">
+  <div className="flex justify-between items-center mb-4">
+    <h2 className="text-xl font-semibold text-purple-700">Results</h2>
+    <div className="flex gap-2 flex-wrap">
+      {activeEndpoint && (
+        <span className="px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-full max-w-full break-all">
+          {`https://rpc1-taupe.vercel.app${activeEndpoint.replace(':walletAddress', walletAddress).replace(':tokenAddress', tokenAddress).replace(':signature', txSignature).replace(':symbol', tokenSymbol)}`}
+        </span>
+      )}
+      {(result || error) && (
+        <button
+          onClick={clearResults}
+          className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded-full hover:bg-gray-300"
+        >
+          Clear
+        </button>
+      )}
+    </div>
+  </div>
+
+  {loading && (
+    <div className="flex justify-center items-center h-32">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+    </div>
+  )}
+
+  {!loading && error && (
+    <div className="p-4 bg-red-50 border border-red-200 rounded-md text-red-700">
+      <p className="font-medium">Error:</p>
+      <pre className="whitespace-pre-wrap break-words text-sm mt-1">{error}</pre>
+    </div>
+  )}
+
+  {!loading && result && (
+    <div className="overflow-auto" style={{ maxHeight: '500px' }}>
+      <JsonViewer data={result} expandedDepth={2} />
+    </div>
+  )}
+
+  {!loading && !error && !result && (
+    <div className="p-8 text-center text-gray-500">
+      <p>Select an endpoint to see results here</p>
+    </div>
+  )}
+</div>
+
     </div>
   );
 }
