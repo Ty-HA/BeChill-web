@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getLastTransaction, getRecentTransactions, getWalletBalance, getWalletAnalysis } from '@/lib/wallet-api';
+import { getLastTransaction, getRecentTransactions, getWalletBalance, getWalletAnalysis } from '@/lib/api-service';
 
 export async function POST(request: NextRequest) {
   try {
@@ -47,8 +47,9 @@ export async function POST(request: NextRequest) {
       }
     } catch (apiError) {
       console.error('API data error:', apiError);
-      // Simulate response for testing
+      // Simulation en cas d'erreur
       if (messageLC.includes('last transaction') || messageLC.includes('recent transaction') || messageLC.includes('transactions')) {
+        console.log('Using mock transaction data due to API error');
         // Mock data for testing with multiple transactions over 30 days
         const mockData = {
           transactions: Array.from({ length: 8 }, (_, i) => ({
@@ -68,6 +69,38 @@ export async function POST(request: NextRequest) {
           response: "Here are your transactions from the last 30 days (demo mode):", 
           data: mockData,
           type: "wallet-transaction",
+          demo: true
+        });
+      } else if (messageLC.includes('balance') || messageLC.includes('holdings')) {
+        console.log('Using mock balance data due to API error');
+        const mockData = {
+          sol: { amount: 10.5, usdValue: 1050.0 },
+          tokens: [
+            { symbol: "USDC", amount: 500, usdValue: 500 },
+            { symbol: "JUP", amount: 100, usdValue: 150 }
+          ]
+        };
+        
+        return NextResponse.json({ 
+          response: `Your balance: ${mockData.sol.amount} SOL (${mockData.sol.usdValue} USD) - DEMO DATA`, 
+          data: mockData,
+          demo: true
+        });
+      } else if (messageLC.includes('analysis') || messageLC.includes('performance')) {
+        console.log('Using mock analysis data due to API error');
+        const mockData = {
+          totalValue: 1700.0,
+          changePercent: 5.2,
+          breakdown: {
+            sol: 62,
+            stablecoins: 29,
+            other: 9
+          }
+        };
+        
+        return NextResponse.json({ 
+          response: `Portfolio analysis: ${mockData.totalValue} USD, change: ${mockData.changePercent}% - DEMO DATA`, 
+          data: mockData,
           demo: true
         });
       } else {

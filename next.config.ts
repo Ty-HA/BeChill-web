@@ -1,7 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  async rewrites() {
+    return [
+      {
+        source: '/wallet-api/:path*',
+        destination: 'https://rpc1-taupe.vercel.app/api/:path*',
+      },
+    ]
+  }
 };
 
 export default nextConfig;

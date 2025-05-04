@@ -1,4 +1,14 @@
 // src/lib/wallet-api.ts
+// src/lib/wallet-api.ts
+// Réutiliser les fonctions de api-service.ts
+import {
+  getLastTransaction as apiGetLastTransaction,
+  getRecentTransactions as apiGetRecentTransactions,
+  getWalletBalance as apiGetWalletBalance,
+  getWalletAnalysis as apiGetWalletAnalysis
+} from './api-service';
+
+
 const API_BASE_URL = 'https://rpc1-taupe.vercel.app';
 
 export async function getLastTransaction(walletAddress: string): Promise<any> {
