@@ -178,25 +178,39 @@ export default function ChatComponent({
   };
 
   const processWalletQuery = async (query: string, walletAddress: string) => {
+    console.log(`[Chat] Traitement de la requête: ${query} pour le wallet: ${walletAddress.slice(0, 6)}...`);
     addBotTyping();
     
     try {
+      console.log('[Chat] Envoi de la requête à l\'API');
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: query, walletAddress })
       });
       
+      if (!response.ok) {
+        console.error(`[Chat] Erreur HTTP: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        console.error(`[Chat] Réponse d'erreur: ${errorText}`);
+        throw new Error(`Erreur HTTP: ${response.status}`);
+      }
+      
+      console.log('[Chat] Réponse reçue, analyse du JSON');
       const result = await response.json();
+      console.log('[Chat] Données reçues:', result);
+      
       removeBotTyping();
       
-      // If API indicates a wallet is required
+      // Vérifie si un wallet est requis
       if (result.requireWallet) {
+        console.log('[Chat] Wallet requis');
         askForWalletAddress(query);
         return;
       }
       
-      // Add response message
+      // Ajoute le message de réponse
+      console.log('[Chat] Ajout du message de réponse');
       addMessage({ 
         text: result.response, 
         sender: "bot", 
@@ -204,8 +218,9 @@ export default function ChatComponent({
         data: result.data
       });
       
-      if (result.type === "wallet-transaction") {
-        // In TransactionInfo component, pass isDemo flag
+      // Passe le flag isDemo si nécessaire
+      if (result.type === "wallet-transaction" && result.demo) {
+        console.log('[Chat] Marquer comme démo');
         const lastMessageIndex = messages.length;
         setMessages(prevMessages => {
           const newMessages = [...prevMessages];
@@ -219,37 +234,14 @@ export default function ChatComponent({
         });
       }
     } catch (error) {
-      console.error("Error processing wallet query:", error);
+      console.error("[Chat] Erreur lors du traitement de la requête:", error);
       removeBotTyping();
       
-      // Simulate a response during development/testing
-      if (query.toLowerCase().includes('last transaction') || query.toLowerCase().includes('recent transaction') || query.toLowerCase().includes('transactions')) {
-        const mockData = {
-          transactions: Array.from({ length: 8 }, (_, i) => ({
-            signature: `5xAt3ve1XcFxDGtCMDpLPRgXMvKvp6MWHWrwVK3mHpHjYx9timZsNFNrLdVCvyr1Kft${i}`,
-            timestamp: Math.floor(Date.now() / 1000) - (i * 86400 * 3), // Every 3 days
-            type: i % 2 === 0 ? "Transfer" : "Swap",
-            tokenTransfers: [
-              {
-                amount: (Math.random() * 2).toFixed(2),
-                symbol: i % 3 === 0 ? "SOL" : (i % 3 === 1 ? "USDC" : "JUP")
-              }
-            ]
-          }))
-        };
-        
-        addMessage({ 
-          text: "Here are your transactions from the last 30 days (demo mode in case of API error):", 
-          sender: "bot", 
-          type: "wallet-transaction",
-          data: mockData
-        });
-      } else {
-        addMessage({ 
-          text: "Sorry, an error occurred while analyzing your wallet. Please verify the address and try again.", 
-          sender: "bot" 
-        });
-      }
+      // Message d'erreur simple
+      addMessage({ 
+        text: "Désolé, une erreur s'est produite lors de l'analyse de votre portefeuille. Veuillez vérifier l'adresse et réessayer.", 
+        sender: "bot" 
+      });
     }
   };
 

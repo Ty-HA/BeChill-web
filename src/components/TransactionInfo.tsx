@@ -7,6 +7,19 @@ type TransactionInfoProps = {
   isDemo?: boolean;
 };
 
+interface TransactionData {
+  transactions: Array<{
+    signature: string;
+    timestamp: number;
+    type: string;
+    tokenTransfers: Array<{
+      amount: string;
+      symbol: string;
+    }>;
+  }>;
+  isDemo?: boolean;
+}
+
 export default function TransactionInfo({ data, onClose, isDemo = false }: TransactionInfoProps) {
   // State for pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -30,18 +43,18 @@ export default function TransactionInfo({ data, onClose, isDemo = false }: Trans
       
       data = { transactions: mockTransactions };
     } else {
-      return (
-        <div className="bg-white p-4 rounded-xl w-full my-2">
-          <h3 className="text-purple-900 text-xl font-bold">No Transactions Found</h3>
-          <p className="text-gray-700 mt-2">No transactions found in the last 30 days for this wallet.</p>
-          <button
-            onClick={onClose}
-            className="mt-4 bg-purple-600 text-white px-4 py-1 rounded-full"
-          >
-            Close
-          </button>
-        </div>
-      );
+        return (
+            <div className="bg-white p-4 rounded-xl w-full my-2">
+              <h3 className="text-purple-900 text-xl font-bold">No Transactions Found</h3>
+              <p className="text-gray-700 mt-2">No transactions found for this wallet address.</p>
+              <button
+                onClick={onClose}
+                className="mt-4 bg-purple-600 text-white px-4 py-1 rounded-full"
+              >
+                Close
+              </button>
+            </div>
+          );
     }
   }
 
@@ -56,10 +69,10 @@ export default function TransactionInfo({ data, onClose, isDemo = false }: Trans
 
   return (
     <div className="bg-white p-4 rounded-xl w-full my-2 border border-purple-200">
-      <h3 className="text-purple-900 text-xl font-bold">
-        Transactions (Last 30 Days)
-        {isDemo && <span className="text-xs font-normal text-purple-600 ml-2">(Demo Mode)</span>}
-      </h3>
+<h3 className="text-purple-900 text-xl font-bold">
+  Recent Transactions
+  {isDemo && <span className="text-xs font-normal text-purple-600 ml-2">(Demo Mode)</span>}
+</h3>
       
       <div className="mt-3 text-left max-h-60 overflow-y-auto">
         {currentTransactions.map((transaction: any, index: number) => (

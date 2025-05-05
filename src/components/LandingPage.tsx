@@ -84,8 +84,11 @@ export default function LandingPage() {
         walletReviewed={walletReviewed}
       />
     <CardCarouselSection />
+
         
       <section className="container mx-auto px-4 py-12 flex justify-center">
+     
+
       <ChatComponent
           userWallet={typedUser?.wallet?.address || null}
           className="w-full max-w-md shadow-lg"
@@ -97,6 +100,7 @@ export default function LandingPage() {
       </section>
       
       </div>
+      
     </main>
     <Footer />
   </PrivyGate>

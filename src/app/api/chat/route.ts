@@ -1,9 +1,76 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getLastTransaction, getRecentTransactions, getWalletBalance, getWalletAnalysis } from '@/lib/api-service';
+import { getRecentTransactions } from '@/lib/api-service';
+
+// Data adapter function - matches the one we tested in the Node script
+function adaptTransactionsData(apiData: any) {
+  if (!apiData || !apiData.transactions || !apiData.transactions.results) {
+    console.log('[API] Invalid data structure', apiData);
+    return { transactions: [] };
+  }
+  
+  try {
+    const transactions = apiData.transactions.results.map((tx: any) => {
+      // Get transaction signature
+      let signature = "unknown";
+      if (tx.transaction && tx.transaction.signatures && tx.transaction.signatures.length > 0) {
+        signature = tx.transaction.signatures[0];
+      } else if (tx.transaction && tx.transaction.message && tx.transaction.message.accountKeys) {
+        signature = tx.transaction.message.accountKeys[0]?.pubkey || "unknown";
+      }
+      
+      // Transaction timestamp
+      const timestamp = tx.blockTime || Math.floor(Date.now() / 1000);
+      
+      // Determine transaction type based on logs
+      let type = "Transfer";
+      if (tx.meta && tx.meta.logMessages) {
+        const logs = tx.meta.logMessages.join(' ');
+        if (logs.includes('Swap')) type = "Swap";
+        else if (logs.includes('Stake')) type = "Stake";
+      }
+      
+      // Analyze token transfers
+      const tokenTransfers = [];
+      
+      // Simple balance difference calculation for SOL
+      if (tx.meta && tx.meta.preBalances && tx.meta.postBalances && tx.meta.preBalances.length > 0) {
+        const diff = (tx.meta.preBalances[0] - tx.meta.postBalances[0]) / 1000000000; // Convert lamports to SOL
+        if (diff > 0) {
+          tokenTransfers.push({
+            amount: diff.toFixed(4),
+            symbol: "SOL"
+          });
+        }
+      }
+      
+      // If no transfers detected, add a placeholder
+      if (tokenTransfers.length === 0) {
+        tokenTransfers.push({
+          amount: "0.0000",
+          symbol: "SOL"
+        });
+      }
+      
+      return {
+        signature,
+        timestamp,
+        type,
+        tokenTransfers
+      };
+    });
+    
+    return { transactions };
+  } catch (error) {
+    console.error('[API] Error transforming transaction data:', error);
+    return { transactions: [] };
+  }
+}
 
 export async function POST(request: NextRequest) {
+  console.log('[API] Starting POST request');
   try {
     const { message, walletAddress } = await request.json();
+    console.log(`[API] Message: "${message}", Wallet: ${walletAddress?.slice(0, 6)}...`);
     
     if (!walletAddress) {
       return NextResponse.json({ 
@@ -11,108 +78,47 @@ export async function POST(request: NextRequest) {
         requireWallet: true
       });
     }
-
-    // Detect different types of requests
-    const messageLC = message.toLowerCase();
     
-    try {
-      // Check request type
-      if (messageLC.includes('last transaction') || messageLC.includes('recent transaction') || messageLC.includes('transactions')) {
-        // Modified to get transactions for the last 30 days
-        const data = await getRecentTransactions(walletAddress, 30);
+    // Detect if the request is for transactions
+    const messageLC = message.toLowerCase();
+    if (messageLC.includes('transaction') || messageLC.includes('history')) {
+      try {
+        console.log('[API] Calling getRecentTransactions');
+        // Get the 10 most recent transactions (forget about time period filtering)
+        const apiData = await getRecentTransactions(walletAddress, 10);
+        console.log('[API] Data received, adapting to format');
+        
+        // Adapt data to TransactionInfo format using our tested function
+        const formattedData = adaptTransactionsData(apiData);
+        console.log('[API] Data successfully adapted');
+        
         return NextResponse.json({ 
-          response: "Here are your transactions from the last 30 days:", 
-          data,
+          response: "Here are your most recent transactions:", 
+          data: formattedData,
           type: "wallet-transaction" 
         });
-      } 
-      else if (messageLC.includes('balance') || messageLC.includes('holdings')) {
-        const data = await getWalletBalance(walletAddress);
-        return NextResponse.json({ 
-          response: `Your balance: ${data.sol?.amount || 0} SOL (${data.sol?.usdValue || 0} USD)`,
-          data
-        });
-      }
-      else if (messageLC.includes('analysis') || messageLC.includes('performance')) {
-        const data = await getWalletAnalysis(walletAddress);
-        return NextResponse.json({ 
-          response: `Portfolio analysis: ${data.totalValue || 0} USD, change: ${data.changePercent || 0}%`, 
-          data
-        });
-      }
-      else {
-        return NextResponse.json({ 
-          response: "I don't understand your wallet query. Try asking about your transactions, balance, or portfolio analysis." 
-        });
-      }
-    } catch (apiError) {
-      console.error('API data error:', apiError);
-      // Simulation en cas d'erreur
-      if (messageLC.includes('last transaction') || messageLC.includes('recent transaction') || messageLC.includes('transactions')) {
-        console.log('Using mock transaction data due to API error');
-        // Mock data for testing with multiple transactions over 30 days
-        const mockData = {
-          transactions: Array.from({ length: 8 }, (_, i) => ({
-            signature: `5xAt3ve1XcFxDGtCMDpLPRgXMvKvp6MWHWrwVK3mHpHjYx9timZsNFNrLdVCvyr1Kft${i}`,
-            timestamp: Math.floor(Date.now() / 1000) - (i * 86400 * 3), // Every 3 days
-            type: i % 2 === 0 ? "Transfer" : "Swap",
-            tokenTransfers: [
-              {
-                amount: (Math.random() * 2).toFixed(2),
-                symbol: i % 3 === 0 ? "SOL" : (i % 3 === 1 ? "USDC" : "JUP")
-              }
-            ]
-          }))
-        };
+      } catch (apiError) {
+        console.error('[API] API Error:', apiError);
         
+        const errorMessage = apiError instanceof Error ? apiError.message : "Unknown";
         return NextResponse.json({ 
-          response: "Here are your transactions from the last 30 days (demo mode):", 
-          data: mockData,
-          type: "wallet-transaction",
-          demo: true
-        });
-      } else if (messageLC.includes('balance') || messageLC.includes('holdings')) {
-        console.log('Using mock balance data due to API error');
-        const mockData = {
-          sol: { amount: 10.5, usdValue: 1050.0 },
-          tokens: [
-            { symbol: "USDC", amount: 500, usdValue: 500 },
-            { symbol: "JUP", amount: 100, usdValue: 150 }
-          ]
-        };
-        
-        return NextResponse.json({ 
-          response: `Your balance: ${mockData.sol.amount} SOL (${mockData.sol.usdValue} USD) - DEMO DATA`, 
-          data: mockData,
-          demo: true
-        });
-      } else if (messageLC.includes('analysis') || messageLC.includes('performance')) {
-        console.log('Using mock analysis data due to API error');
-        const mockData = {
-          totalValue: 1700.0,
-          changePercent: 5.2,
-          breakdown: {
-            sol: 62,
-            stablecoins: 29,
-            other: 9
-          }
-        };
-        
-        return NextResponse.json({ 
-          response: `Portfolio analysis: ${mockData.totalValue} USD, change: ${mockData.changePercent}% - DEMO DATA`, 
-          data: mockData,
-          demo: true
-        });
-      } else {
-        return NextResponse.json({ 
-          response: "I couldn't retrieve data for this wallet. Please verify the address and try again." 
-        });
+          response: "Unable to retrieve transaction data for this wallet. Error: " + errorMessage, 
+          data: { transactions: [] },
+          type: "wallet-transaction" 
+        }, { status: 200 }); // Use 200 even for errors to avoid 500 error
       }
     }
-  } catch (error) {
-    console.error('Chat API error:', error);
+    
+    // Handle other types of requests...
     return NextResponse.json({ 
-      response: "Sorry, an error occurred while analyzing your wallet." 
-    }, { status: 500 });
+      response: "I don't understand your request. Try asking about your transactions, balance, or portfolio analysis." 
+    });
+  } catch (error) {
+    console.error('[API] General error:', error);
+    return NextResponse.json({ 
+      response: "An error occurred while processing your request.", 
+      data: { transactions: [] },
+      type: "wallet-transaction"
+    }, { status: 200 }); // Use 200 even for errors to avoid 500 error
   }
 }

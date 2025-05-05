@@ -1,6 +1,6 @@
 // src/lib/api-service.ts
-// Utiliser le proxy configuré dans next.config.ts
-const API_BASE_URL = '/wallet-api'; // Ce sera redirigé vers https://rpc1-taupe.vercel.app/api/
+// Use the proxy configured in next.config.ts
+const API_BASE_URL = '/wallet-api'; // This will be redirected to http://localhost:3001/api/
 
 // Portfolio endpoints
 export async function getPortfolio(walletAddress: string): Promise<any> {
@@ -66,15 +66,15 @@ export async function getTransaction(signature: string): Promise<any> {
   return fetchData(`${API_BASE_URL}/transaction/${signature}`);
 }
 
-// Pour compatibilité avec wallet-api.ts
+// For compatibility with wallet-api.ts
 export async function getLastTransaction(walletAddress: string): Promise<any> {
   return fetchData(`${API_BASE_URL}/portfolio/history/${walletAddress}?limit=1`);
 }
 
-export async function getRecentTransactions(walletAddress: string, days: number = 30): Promise<any> {
-  // Ajouter les paramètres days et limit
-  return fetchData(`${API_BASE_URL}/portfolio/history/${walletAddress}?limit=30&days=${days}`);
-}
+export async function getRecentTransactions(walletAddress: string, limit: number = 10): Promise<any> {
+    // Remove the days parameter and just use a limit
+    return fetchData(`${API_BASE_URL}/portfolio/history/${walletAddress}?limit=${limit}`, 10000); // 10 seconds timeout
+  }
 
 export async function getWalletBalance(walletAddress: string): Promise<any> {
   return getBalances(walletAddress);
@@ -84,47 +84,73 @@ export async function getWalletAnalysis(walletAddress: string): Promise<any> {
   return getPortfolioAnalysis(walletAddress);
 }
 
-// Fonction fetch améliorée avec gestion d'erreur
-// Fonction fetch améliorée avec plus de logs
-async function fetchData(url: string): Promise<any> {
+// Enhanced fetch function with error handling and timeout
+async function fetchData(url: string, timeout = 8000): Promise<any> {
     try {
-      console.log(`[API Request] Starting request to: ${url}`);
+      console.log(`[API Request] Starting request to: ${url} with timeout ${timeout}ms`);
       
-      const response = await fetch(url, {
+      // Create a proper URL - ensure it starts with http:// or https://
+      let fetchUrl = url;
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        // If running in the browser, use the base URL of the current page
+        if (typeof window !== 'undefined') {
+          const baseUrl = window.location.origin;
+          fetchUrl = `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+        } else {
+          // If running on server, use the API_BASE_URL (or localhost)
+          fetchUrl = `http://localhost:3000${url.startsWith('/') ? '' : '/'}${url}`;
+        }
+      }
+      
+      console.log(`[API Request] Resolved URL: ${fetchUrl}`);
+      
+      // Create abort controller for timeout handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      
+      const response = await fetch(fetchUrl, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json'
         },
+        signal: controller.signal,
         cache: 'no-store'
       });
       
-      console.log(`[API Response] Status: ${response.status} for URL: ${url}`);
-      
-      // Récupérer le texte brut de la réponse d'abord
-      const responseText = await response.text();
-      console.log(`[API Response] Raw text length: ${responseText.length} characters`);
-      
-      if (!response.ok) {
-        console.error(`[API Error] Status: ${response.status} for URL: ${url}`);
-        console.error(`[API Error] Response body: ${responseText.substring(0, 500)}${responseText.length > 500 ? '...' : ''}`);
-        throw new Error(`API error: ${response.status} - ${responseText.substring(0, 200)}${responseText.length > 200 ? '...' : ''}`);
-      }
-      
-      // Convertir le texte en JSON si possible
-      let data;
-      try {
-        data = JSON.parse(responseText);
-        console.log(`[API Success] Parsed JSON data for URL: ${url}`);
-      } catch (parseError) {
-        console.error("[API Error] Failed to parse JSON:", parseError);
-        console.error(`[API Error] Raw response: ${responseText.substring(0, 500)}${responseText.length > 500 ? '...' : ''}`);
-        throw new Error(`Error parsing API response: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
-      }
-      
-      return data;
-    } catch (error) {
-      console.error("[API Error] Fetch error:", error);
-      throw error;
+      // Clear timeout
+      clearTimeout(timeoutId);
+    
+    console.log(`[API Response] Status: ${response.status} for URL: ${url}`);
+    
+    // Get raw response text first
+    const responseText = await response.text();
+    console.log(`[API Response] Raw text length: ${responseText.length} characters`);
+    
+    if (!response.ok) {
+      console.error(`[API Error] Status: ${response.status} for URL: ${url}`);
+      console.error(`[API Error] Response body: ${responseText.substring(0, 500)}${responseText.length > 500 ? '...' : ''}`);
+      throw new Error(`API error: ${response.status} - ${responseText.substring(0, 200)}${responseText.length > 200 ? '...' : ''}`);
     }
+    
+    // Parse JSON if possible
+    let data;
+    try {
+      data = JSON.parse(responseText);
+      console.log(`[API Success] Parsed JSON data for URL: ${url}`);
+    } catch (parseError) {
+      console.error("[API Error] Failed to parse JSON:", parseError);
+      console.error(`[API Error] Raw response: ${responseText.substring(0, 500)}${responseText.length > 500 ? '...' : ''}`);
+      throw new Error(`Error parsing API response: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+    }
+    
+    return data;
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error(`[API Error] Request timeout after ${timeout}ms for URL: ${url}`);
+      throw new Error(`Request timed out after ${timeout}ms`);
+    }
+    console.error("[API Error] Fetch error:", error);
+    throw error;
   }
+}

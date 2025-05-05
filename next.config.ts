@@ -5,7 +5,8 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/wallet-api/:path*',
-        destination: 'https://rpc1-taupe.vercel.app/api/:path*',
+        // destination: 'https://rpc1-taupe.vercel.app/api/:path*',
+        destination: 'http://localhost:3001/api/:path*',
       },
     ]
   }
