@@ -154,3 +154,100 @@ async function fetchData(url: string, timeout = 8000): Promise<any> {
     throw error;
   }
 }
+
+// Nouvelle fonction à ajouter à api-service.ts
+
+// Fonction pour récupérer des informations détaillées sur un token par son adresse
+export async function getTokenMetadata(tokenMint: string) {
+    try {
+      console.log(`[API Service] Getting token metadata for: ${tokenMint}`);
+      
+      // Vous pouvez utiliser une API telle que celle fournie par Solana ou d'autres services
+      const response = await fetch(`https://public-api.solscan.io/token/meta?tokenAddress=${tokenMint}`);
+      
+      if (!response.ok) {
+        throw new Error(`Token metadata fetch failed: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error(`[API Service] Error fetching token metadata:`, error);
+      throw error;
+    }
+  }
+  
+  // Fonction pour enrichir les transactions avec des métadonnées de token
+  export async function enrichTransactionsWithTokenMetadata(transactions: any[]) {
+    if (!transactions || !Array.isArray(transactions)) return [];
+    
+    console.log(`[API Service] Enriching ${transactions.length} transactions with token metadata`);
+    
+    // Collecter toutes les adresses de token uniques
+    const tokenMints = new Set();
+    transactions.forEach(tx => {
+      if (tx.tokenTransfers && Array.isArray(tx.tokenTransfers)) {
+        tx.tokenTransfers.forEach((transfer: any) => {
+          if (transfer.tokenMint) {
+            tokenMints.add(transfer.tokenMint);
+          }
+        });
+      }
+    });
+    
+    console.log(`[API Service] Found ${tokenMints.size} unique token mints`);
+    
+    // Récupérer les métadonnées pour chaque token (limiter à 10 requêtes en parallèle)
+    const tokenMetadata: Record<string, any> = {};
+    
+    const tokenMintsArray = Array.from(tokenMints);
+    const batchSize = 10;
+    
+    for (let i = 0; i < tokenMintsArray.length; i += batchSize) {
+      const batch = tokenMintsArray.slice(i, i + batchSize);
+      
+      const metadataPromises = batch.map((mint: any) => 
+        getTokenMetadata(mint)
+          .then(data => ({ mint, data }))
+          .catch(() => ({ mint, data: null })) // Éviter que les promesses échouent
+      );
+      
+      const results = await Promise.all(metadataPromises);
+      
+      results.forEach(({ mint, data }) => {
+        if (data) {
+          tokenMetadata[mint] = data;
+        }
+      });
+    }
+    
+    console.log(`[API Service] Fetched metadata for ${Object.keys(tokenMetadata).length} tokens`);
+    
+    // Enrichir les transactions avec les métadonnées
+    const enrichedTransactions = transactions.map(tx => {
+      if (tx.tokenTransfers && Array.isArray(tx.tokenTransfers)) {
+        tx.tokenTransfers = tx.tokenTransfers.map((transfer: any) => {
+          if (transfer.tokenMint && tokenMetadata[transfer.tokenMint]) {
+            const metadata = tokenMetadata[transfer.tokenMint];
+            
+            return {
+              ...transfer,
+              symbol: transfer.symbol || metadata.symbol || "UNKNOWN",
+              name: metadata.name || "",
+              logo: metadata.icon || "",
+              decimals: transfer.decimals || metadata.decimals || 9,
+              tokenType: metadata.tokenType || transfer.tokenType,
+              // Calculer la valeur USD si les prix sont disponibles
+              usdValue: metadata.price && transfer.amount ? 
+                (parseFloat(transfer.amount) * parseFloat(metadata.price)).toFixed(2) : 
+                undefined
+            };
+          }
+          return transfer;
+        });
+      }
+      return tx;
+    });
+    
+    return enrichedTransactions;
+  }
