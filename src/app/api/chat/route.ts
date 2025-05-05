@@ -3,8 +3,79 @@ import {
   getRecentTransactions,
   enrichTransactionsWithTokenMetadata,
 } from "@/lib/api-service";
+import { spawn } from 'child_process';
+import stripAnsi from 'strip-ansi';
 
-// Data adapter function for processing transaction data
+// Configuration
+const API_ENDPOINTS = {
+  FETCH_WALLET: "/api/fetch-wallet"
+};
+
+// Query types et patterns
+const QueryTypes = {
+  NFT: ['nft', 'non fungible', 'collectible', /what.*own/i],
+  PORTFOLIO: ['diversif', 'portfolio balance', /portfolio.*well/],
+  TRANSACTIONS: ['transaction', 'history'],
+  DEFI: ['defi', 'swap', 'stake', 'yield', 'liquidity', 'apy']
+};
+
+const TOKEN_REGEX = /\b(sol|usdc|eth|btc|bonk|jup|orca|ray|msol|jsol|usdt)\b/i;
+
+// Fonction utilitaire pour récupérer les données du wallet de Sonarwatch
+async function fetchWalletDataDirect(address: string): Promise<any[]> {
+  const sonarwatchPath = '/Users/tyha/Projects/api/sonarwatch-backend';
+  
+  return new Promise((resolve, reject) => {
+    const fetcher = spawn(
+      'npx',
+      ['nx', 'run', 'plugins:run-fetcher', 'wallet-tokens-solana', address],
+      {
+        cwd: sonarwatchPath,
+        shell: true,
+      }
+    );
+
+    let output = '';
+    let errorOutput = '';
+
+    fetcher.stdout.on('data', (data) => {
+      output += data.toString();
+    });
+
+    fetcher.stderr.on('data', (data) => {
+      errorOutput += data.toString();
+    });
+
+    fetcher.on('close', () => {
+      try {
+        const cleanOutput = stripAnsi(output);
+
+        const startIndex = cleanOutput.indexOf('[');
+        const endIndex = cleanOutput.lastIndexOf(']') + 1;
+
+        if (startIndex === -1 || endIndex === -1) {
+          throw new Error('No JSON array found in output');
+        }
+
+        let jsonLike = cleanOutput.substring(startIndex, endIndex);
+
+        // Remplacements pour corriger les erreurs de JSON :
+        jsonLike = jsonLike
+          .replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g, '$1"$2":') // clé non-quotée => "clé":
+          .replace(/'([^']*)'/g, (_, p1) => `"${p1.replace(/"/g, '\\"')}"`) // quotes simples => doubles
+          .replace(/\bundefined\b/g, 'null'); // undefined => null
+
+        const parsed = JSON.parse(jsonLike);
+        resolve(parsed);
+      } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        reject(new Error(`Invalid output: ${errorMessage}`));
+      }
+    });
+  });
+}
+
+// Data adapter function pour traiter les données de transaction
 function adaptTransactionsData(apiData: any) {
   if (!apiData || !apiData.transactions || !apiData.transactions.results) {
     console.log("[API] Invalid data structure", apiData);
@@ -191,6 +262,283 @@ function adaptTransactionsData(apiData: any) {
   }
 }
 
+// Define the valid query types as a type
+type QueryTypeKey = 'NFT' | 'PORTFOLIO' | 'TRANSACTIONS' | 'DEFI' | 'TOKEN' | 'UNKNOWN';
+
+// Détecter le type de requête
+function detectQueryType(message: string): QueryTypeKey {
+  const messageLC = message.toLowerCase();
+  
+  for (const [type, patterns] of Object.entries(QueryTypes)) {
+    if (patterns.some((pattern: string | RegExp) => 
+      typeof pattern === 'string' 
+        ? messageLC.includes(pattern) 
+        : pattern.test(messageLC)
+    )) {
+      return type as QueryTypeKey;
+    }
+  }
+  
+  // Vérification des tokens spécifiques
+  if (TOKEN_REGEX.test(messageLC)) {
+    return 'TOKEN';
+  }
+  
+  return 'UNKNOWN';
+}
+
+// Définir l'interface pour les handlers
+type HandlerFunction = (walletAddress: string, message?: string) => Promise<any>;
+
+// Handler pour les différents types de requêtes
+const queryHandlers: Record<Exclude<QueryTypeKey, 'UNKNOWN'>, HandlerFunction> = {
+  // Handler pour les requêtes NFT
+  NFT: async (walletAddress: string) => {
+    try {
+      console.log("[API] Fetching NFTs from Sonarwatch");
+      
+      // Utiliser l'appel direct aux commandes Sonarwatch
+      const nftData = await fetchWalletDataDirect(walletAddress);
+      
+      // Extraire les NFTs de la réponse
+      const nftPlatform = nftData.find((r: any) => r.platformId === 'wallet-nfts');
+      const nfts = nftPlatform?.data?.assets || [];
+
+      if (nfts.length > 0) {
+        return {
+          response: `I found ${nfts.length} NFTs in your wallet:`,
+          data: { nfts },
+          type: "wallet-nfts",
+        };
+      } else {
+        return {
+          response: "I couldn't find any NFTs in your wallet.",
+          data: { nfts: [] },
+          type: "wallet-nfts",
+        };
+      }
+    } catch (apiError) {
+      console.error("[API] API Error when fetching NFTs:", apiError);
+      return {
+        response: "Unable to retrieve NFT data for this wallet.",
+        data: { nfts: [] },
+        type: "wallet-nfts",
+      };
+    }
+  },
+  
+  // Handler pour les requêtes de diversification de portefeuille
+  PORTFOLIO: async (walletAddress: string) => {
+    try {
+      console.log("[API] Analyzing portfolio diversification via Sonarwatch");
+      
+      // Utiliser l'appel direct aux commandes Sonarwatch
+      const tokensData = await fetchWalletDataDirect(walletAddress);
+
+      // Extraire les tokens de la réponse
+      const tokenPlatform = tokensData.find(
+        (r: any) => r.platformId === "wallet-tokens"
+      );
+      let tokens = [];
+      let totalValue = 0;
+
+      if (tokenPlatform && tokenPlatform.data && tokenPlatform.data.assets) {
+        tokens = tokenPlatform.data.assets;
+        // Calculer la valeur totale
+        totalValue = tokens.reduce(
+          (sum: number, token: any) => sum + (token.value || 0),
+          0
+        );
+      }
+
+      // Analyser la diversification
+      let isDiversified = false;
+      let mainTokenPercentage = 0;
+      let diversificationMessage = "";
+
+      if (tokens.length === 0) {
+        diversificationMessage =
+          "I couldn't find any tokens in your wallet to analyze diversification.";
+      } else if (tokens.length === 1) {
+        diversificationMessage =
+          "Your portfolio consists of only one token, which means it's not diversified. Consider spreading your investment across different assets to reduce risk.";
+      } else {
+        // Trier les tokens par valeur
+        tokens.sort((a: any, b: any) => (b.value || 0) - (a.value || 0));
+
+        // Calculer le pourcentage du plus grand actif
+        mainTokenPercentage =
+          totalValue > 0
+            ? Math.round(((tokens[0].value || 0) * 100) / totalValue)
+            : 0;
+
+        isDiversified = mainTokenPercentage < 50 && tokens.length >= 3;
+
+        if (isDiversified) {
+          diversificationMessage = `Your portfolio appears to be reasonably diversified with ${tokens.length} different tokens. Your largest holding represents ${mainTokenPercentage}% of your portfolio.`;
+        } else {
+          diversificationMessage = `Your portfolio could be more diversified. You have ${tokens.length} tokens, but your largest holding represents ${mainTokenPercentage}% of your total portfolio value.`;
+        }
+      }
+
+      // Ajouter des recommandations
+      const recommendations = [
+        "Consider adding major cryptocurrencies (BTC, ETH, SOL) for stability",
+        "Add some stablecoins (USDC, USDT) to reduce volatility",
+        "Spread investments across different sectors in crypto (DeFi, gaming, infrastructure)",
+        "Avoid having any single asset represent more than 30% of your portfolio",
+      ];
+
+      return {
+        response: diversificationMessage,
+        data: {
+          isDiversified,
+          mainTokenPercentage,
+          tokenCount: tokens.length,
+          recommendations,
+          totalValue,
+        },
+        type: "portfolio-analysis",
+      };
+    } catch (apiError) {
+      console.error("[API] API Error when analyzing portfolio:", apiError);
+      return {
+        response: "I couldn't analyze your portfolio diversification due to a technical issue. Please try again later.",
+        data: {},
+        type: "text",
+      };
+    }
+  },
+  
+  // Handler pour les requêtes de transactions
+  TRANSACTIONS: async (walletAddress: string) => {
+    try {
+      console.log("[API] Calling getRecentTransactions");
+      // Récupérer les 10 transactions les plus récentes
+      const apiData = await getRecentTransactions(walletAddress, 10);
+      console.log("[API] Data received, adapting to format");
+      
+      const formattedData = adaptTransactionsData(apiData);
+      
+      // Essayer d'enrichir les transactions avec les métadonnées des tokens si possible
+      try {
+        console.log("[API] Enriching transactions with token metadata");
+        formattedData.transactions = await enrichTransactionsWithTokenMetadata(formattedData.transactions);
+      } catch (enrichError) {
+        console.warn("[API] Error enriching transactions:", enrichError);
+        // Continuer sans enrichissement
+      }
+      
+      console.log("[API] Data successfully processed");
+      
+      return { 
+        response: "Here are your most recent transactions:", 
+        data: formattedData,
+        type: "wallet-transaction" 
+      };
+    } catch (apiError) {
+      console.error("[API] API Error:", apiError);
+      
+      const errorMessage = apiError instanceof Error ? apiError.message : "Unknown";
+      return { 
+        response: "Unable to retrieve transaction data for this wallet. Error: " + errorMessage, 
+        data: { transactions: [] },
+        type: "wallet-transaction"
+      };
+    }
+  },
+  
+  // Handler pour les requêtes DeFi
+  DEFI: async (walletAddress: string) => {
+    try {
+      console.log("[API] Filtering for DeFi transactions");
+      const apiData = await getRecentTransactions(walletAddress, 20);
+      const allData = adaptTransactionsData(apiData);
+
+      // Filtrer les transactions pour ne montrer que celles liées à la DeFi
+      const defiTypes = [
+        "Swap",
+        "Stake",
+        "Liquidity",
+        "Borrow",
+        "Repay",
+        "Deposit",
+        "Withdraw",
+      ];
+      const defiTransactions = {
+        transactions: allData.transactions.filter(
+          (tx: any) => defiTypes.includes(tx.type) || tx.protocol
+        ),
+      };
+
+      if (defiTransactions.transactions.length > 0) {
+        return {
+          response: "Here are your recent DeFi transactions:",
+          data: defiTransactions,
+          type: "wallet-transaction",
+        };
+      } else {
+        return {
+          response:
+            "I couldn't find any DeFi transactions in your recent history.",
+          data: { transactions: [] },
+          type: "wallet-transaction",
+        };
+      }
+    } catch (apiError) {
+      console.error("[API] API Error:", apiError);
+      return {
+        response: "Unable to retrieve DeFi data for this wallet.",
+        data: { transactions: [] },
+        type: "wallet-transaction",
+      };
+    }
+  },
+  
+  // Handler pour les requêtes spécifiques aux tokens
+  TOKEN: async (walletAddress: string, message: string = "") => {
+    const tokenMatch = message.toLowerCase().match(TOKEN_REGEX);
+    if (!tokenMatch) return null;
+    
+    const tokenSymbol = tokenMatch[0].toUpperCase();
+    try {
+      console.log(`[API] Filtering for ${tokenSymbol} transactions`);
+      const apiData = await getRecentTransactions(walletAddress, 20);
+      const allData = adaptTransactionsData(apiData);
+
+      // Filtrer les transactions pour ne montrer que celles avec le token spécifique
+      const tokenTransactions = {
+        transactions: allData.transactions.filter((tx: any) =>
+          tx.tokenTransfers?.some(
+            (transfer: any) => transfer.symbol.toUpperCase() === tokenSymbol
+          )
+        ),
+      };
+
+      if (tokenTransactions.transactions.length > 0) {
+        return {
+          response: `Here are your transactions involving ${tokenSymbol}:`,
+          data: tokenTransactions,
+          type: "wallet-transaction",
+        };
+      } else {
+        return {
+          response: `I couldn't find any transactions with ${tokenSymbol} in your recent history.`,
+          data: { transactions: [] },
+          type: "wallet-transaction",
+        };
+      }
+    } catch (apiError) {
+      console.error("[API] API Error:", apiError);
+      return {
+        response: `Unable to retrieve data for ${tokenSymbol}.`,
+        data: { transactions: [] },
+        type: "wallet-transaction",
+      };
+    }
+  }
+};
+
 export async function POST(request: NextRequest) {
   console.log("[API] Starting POST request");
   try {
@@ -206,304 +554,19 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Detect query types for portfolio
-    const messageLC = message.toLowerCase();
-
-    // NFT specific queries - USING SONARWATCH ON PORT 4000
-    if (
-      messageLC.includes("nft") ||
-      messageLC.includes("non fungible") ||
-      messageLC.includes("collectible") ||
-      messageLC.match(/what.*own/i)
-    ) {
-      try {
-        console.log("[API] Fetching NFTs from Sonarwatch on port 4000");
-
-        // Use Sonarwatch running on port 4000
-        const nftResponse = await fetch(
-          `http://localhost:4000/api/fetch-wallet?address=${walletAddress}`
-        );
-
-        if (!nftResponse.ok) {
-          throw new Error(`Failed to fetch NFTs: ${nftResponse.status}`);
-        }
-
-        const nftData = await nftResponse.json();
-        
-        // Extract NFTs from the Sonarwatch response
-        const nftPlatform = nftData.find((r: any) => r.platformId === 'wallet-nfts');
-        const nfts = nftPlatform?.data?.assets || [];
-
-        if (nfts.length > 0) {
-          return NextResponse.json({
-            response: `I found ${nfts.length} NFTs in your wallet:`,
-            data: { nfts },
-            type: "wallet-nfts",
-          });
-        } else {
-          return NextResponse.json({
-            response: "I couldn't find any NFTs in your wallet.",
-            data: { nfts: [] },
-            type: "wallet-nfts",
-          });
-        }
-      } catch (apiError) {
-        console.error("[API] API Error when fetching NFTs:", apiError);
-        return NextResponse.json(
-          {
-            response: "Unable to retrieve NFT data for this wallet.",
-            data: { nfts: [] },
-            type: "wallet-nfts",
-          },
-          { status: 200 }
-        );
-      }
-    }
-
-    // Portfolio diversification queries - USING SONARWATCH ON PORT 4000
-    if (
-      messageLC.includes("diversif") ||
-      messageLC.includes("portfolio balance") ||
-      (messageLC.includes("portfolio") && messageLC.includes("well"))
-    ) {
-      try {
-        console.log("[API] Analyzing portfolio diversification via Sonarwatch");
-
-        // Use Sonarwatch API running on port 4000 to get token data
-        const tokensResponse = await fetch(
-          `http://localhost:4000/api/fetch-wallet?address=${walletAddress}`
-        );
-
-        if (!tokensResponse.ok) {
-          throw new Error(`Failed to fetch tokens: ${tokensResponse.status}`);
-        }
-
-        const tokensData = await tokensResponse.json();
-
-        // Extract tokens from the response
-        const tokenPlatform = tokensData.find(
-          (r: any) => r.platformId === "wallet-tokens"
-        );
-        let tokens = [];
-        let totalValue = 0;
-
-        if (tokenPlatform && tokenPlatform.data && tokenPlatform.data.assets) {
-          tokens = tokenPlatform.data.assets;
-          // Calculate total value
-          totalValue = tokens.reduce(
-            (sum: number, token: any) => sum + (token.value || 0),
-            0
-          );
-        }
-
-        // Analyze diversification
-        let isDiversified = false;
-        let mainTokenPercentage = 0;
-        let diversificationMessage = "";
-
-        if (tokens.length === 0) {
-          diversificationMessage =
-            "I couldn't find any tokens in your wallet to analyze diversification.";
-        } else if (tokens.length === 1) {
-          diversificationMessage =
-            "Your portfolio consists of only one token, which means it's not diversified. Consider spreading your investment across different assets to reduce risk.";
-        } else {
-          // Sort tokens by value
-          tokens.sort((a: any, b: any) => (b.value || 0) - (a.value || 0));
-
-          // Calculate percentage of the largest holding
-          mainTokenPercentage =
-            totalValue > 0
-              ? Math.round(((tokens[0].value || 0) * 100) / totalValue)
-              : 0;
-
-          isDiversified = mainTokenPercentage < 50 && tokens.length >= 3;
-
-          if (isDiversified) {
-            diversificationMessage = `Your portfolio appears to be reasonably diversified with ${tokens.length} different tokens. Your largest holding represents ${mainTokenPercentage}% of your portfolio.`;
-          } else {
-            diversificationMessage = `Your portfolio could be more diversified. You have ${tokens.length} tokens, but your largest holding represents ${mainTokenPercentage}% of your total portfolio value.`;
-          }
-        }
-
-        // Add recommendations
-        const recommendations = [
-          "Consider adding major cryptocurrencies (BTC, ETH, SOL) for stability",
-          "Add some stablecoins (USDC, USDT) to reduce volatility",
-          "Spread investments across different sectors in crypto (DeFi, gaming, infrastructure)",
-          "Avoid having any single asset represent more than 30% of your portfolio",
-        ];
-
-        return NextResponse.json({
-          response: diversificationMessage,
-          data: {
-            isDiversified,
-            mainTokenPercentage,
-            tokenCount: tokens.length,
-            recommendations,
-            totalValue,
-          },
-          type: "portfolio-analysis",
-        });
-      } catch (apiError) {
-        console.error("[API] API Error when analyzing portfolio:", apiError);
-        return NextResponse.json(
-          {
-            response:
-              "I couldn't analyze your portfolio diversification due to a technical issue.",
-            data: {},
-            type: "text",
-          },
-          { status: 200 }
-        );
-      }
-    }
-
-    // ALL OTHER QUERIES USE PORT 3001 API
+    // Déterminer le type de requête et traiter en conséquence
+    const queryType = detectQueryType(message);
     
-    // General transaction queries
-    if (messageLC.includes("transaction") || messageLC.includes("history")) {
-      try {
-        console.log("[API] Calling getRecentTransactions on port 3001");
-        // Get the 10 most recent transactions
-        const apiData = await getRecentTransactions(walletAddress, 10);
-        console.log("[API] Data received, adapting to format");
-        
-        const formattedData = adaptTransactionsData(apiData);
-        
-        // Try to enrich transactions with token metadata if possible
-        try {
-          console.log("[API] Enriching transactions with token metadata");
-          formattedData.transactions = await enrichTransactionsWithTokenMetadata(formattedData.transactions);
-        } catch (enrichError) {
-          console.warn("[API] Error enriching transactions:", enrichError);
-          // Continue without enrichment
-        }
-        
-        console.log("[API] Data successfully processed");
-        
-        return NextResponse.json({ 
-          response: "Here are your most recent transactions:", 
-          data: formattedData,
-          type: "wallet-transaction" 
-        });
-      } catch (apiError) {
-        console.error("[API] API Error:", apiError);
-        
-        const errorMessage = apiError instanceof Error ? apiError.message : "Unknown";
-        return NextResponse.json({ 
-          response: "Unable to retrieve transaction data for this wallet. Error: " + errorMessage, 
-          data: { transactions: [] },
-          type: "wallet-transaction"
-        }, { status: 200 });
+    if (queryType === 'TOKEN') {
+      const result = await queryHandlers.TOKEN(walletAddress, message);
+      if (result) {
+        return NextResponse.json(result);
       }
+    } else if (queryType !== 'UNKNOWN' && queryType in queryHandlers) {
+      return NextResponse.json(await queryHandlers[queryType as Exclude<QueryTypeKey, 'UNKNOWN'>](walletAddress));
     }
-
-    // DeFi specific queries - PORT 3001
-    if (
-      messageLC.includes("defi") ||
-      messageLC.includes("swap") ||
-      messageLC.includes("stake") ||
-      messageLC.includes("yield") ||
-      messageLC.includes("liquidity") ||
-      messageLC.includes("apy")
-    ) {
-      try {
-        console.log("[API] Filtering for DeFi transactions");
-        const apiData = await getRecentTransactions(walletAddress, 20);
-        const allData = adaptTransactionsData(apiData);
-
-        // Filter transactions to show only those related to DeFi
-        const defiTypes = [
-          "Swap",
-          "Stake",
-          "Liquidity",
-          "Borrow",
-          "Repay",
-          "Deposit",
-          "Withdraw",
-        ];
-        const defiTransactions = {
-          transactions: allData.transactions.filter(
-            (tx: any) => defiTypes.includes(tx.type) || tx.protocol
-          ),
-        };
-
-        if (defiTransactions.transactions.length > 0) {
-          return NextResponse.json({
-            response: "Here are your recent DeFi transactions:",
-            data: defiTransactions,
-            type: "wallet-transaction",
-          });
-        } else {
-          return NextResponse.json({
-            response:
-              "I couldn't find any DeFi transactions in your recent history.",
-            data: { transactions: [] },
-            type: "wallet-transaction",
-          });
-        }
-      } catch (apiError) {
-        console.error("[API] API Error:", apiError);
-        return NextResponse.json(
-          {
-            response: "Unable to retrieve DeFi data for this wallet.",
-            data: { transactions: [] },
-            type: "wallet-transaction",
-          },
-          { status: 200 }
-        );
-      }
-    }
-
-    // Specific token queries - PORT 3001
-    const tokenRegex =
-      /\b(sol|usdc|eth|btc|bonk|jup|orca|ray|msol|jsol|usdt)\b/i;
-    const tokenMatch = messageLC.match(tokenRegex);
-
-    if (tokenMatch) {
-      const tokenSymbol = tokenMatch[0].toUpperCase();
-      try {
-        console.log(`[API] Filtering for ${tokenSymbol} transactions`);
-        const apiData = await getRecentTransactions(walletAddress, 20);
-        const allData = adaptTransactionsData(apiData);
-
-        // Filter transactions to show only those with the specific token
-        const tokenTransactions = {
-          transactions: allData.transactions.filter((tx: any) =>
-            tx.tokenTransfers?.some(
-              (transfer: any) => transfer.symbol.toUpperCase() === tokenSymbol
-            )
-          ),
-        };
-
-        if (tokenTransactions.transactions.length > 0) {
-          return NextResponse.json({
-            response: `Here are your transactions involving ${tokenSymbol}:`,
-            data: tokenTransactions,
-            type: "wallet-transaction",
-          });
-        } else {
-          return NextResponse.json({
-            response: `I couldn't find any transactions with ${tokenSymbol} in your recent history.`,
-            data: { transactions: [] },
-            type: "wallet-transaction",
-          });
-        }
-      } catch (apiError) {
-        console.error("[API] API Error:", apiError);
-        return NextResponse.json(
-          {
-            response: `Unable to retrieve data for ${tokenSymbol}.`,
-            data: { transactions: [] },
-            type: "wallet-transaction",
-          },
-          { status: 200 }
-        );
-      }
-    }
-
-    // Fallback for other types of queries
+    
+    // Fallback pour les autres types de requêtes
     return NextResponse.json({
       response:
         "I don't fully understand your request. You can ask me about your transactions, NFTs, DeFi activity, portfolio diversification, or specific tokens like SOL or USDC.",

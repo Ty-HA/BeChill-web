@@ -4,6 +4,7 @@ import Image from "next/image";
 import WalletStoryWeb from "./WalletStoryWeb";
 import TransactionInfo from "./TransactionInfo";
 
+// Types
 type MessageType =
   | "text"
   | "wallet-connect"
@@ -31,6 +32,68 @@ type ChatProps = {
   onMessagesUpdate?: (messages: Message[]) => void;
 };
 
+// Suggestion buttons collections
+const DEFAULT_WALLET_SUGGESTIONS = [
+  "Show my transactions",
+  "What NFTs do I own?",
+  "Check my DeFi activity",
+  "Is my portfolio well diversified?"
+];
+
+const POST_TRANSACTION_SUGGESTIONS = {
+  "Swap": [
+    "Show my token balances",
+    "What was my best swap?",
+    "Show my SOL transactions",
+    "Is my portfolio well diversified?"
+  ],
+  "NFT Trade": [
+    "What NFTs do I own now?",
+    "Show my NFT trading history",
+    "What's my most valuable NFT?",
+    "Is my portfolio well diversified?"
+  ],
+  "NFT Mint": [
+    "What NFTs do I own now?",
+    "Show my NFT trading history",
+    "What's my most valuable NFT?",
+    "Is my portfolio well diversified?"
+  ],
+  "Analysis": [
+    "Show my transactions",
+    "What NFTs do I own?", 
+    "Check my DeFi activity",
+    "Show my token balances"
+  ],
+  "Default": [
+    "How is my portfolio performing?",
+    "Show my DeFi activity",
+    "What tokens do I hold?",
+    "Is my portfolio well diversified?"
+  ]
+};
+
+// Wallet-related regex patterns
+const WALLET_REQUEST_PATTERNS = {
+  YES_CONNECT: /yes|connect|sure|okay/i,
+  NO_CONNECT: /no|later|not now/i,
+  WALLET_ADDRESS: /my wallet is|my address is|here's my wallet|here is my wallet|here is my address/i
+};
+
+// Wallet query patterns
+const WALLET_QUERY_PATTERNS = [
+  "last transaction",
+  "recent transaction",
+  "balance",
+  "holdings",
+  "analysis",
+  "performance",
+  "show my transactions",
+  "nft",
+  "collectible",
+  /what.*own/  // Captures "What NFTs do I own?"
+];
+
 export default function ChatComponent({
   initialMessages = [],
   userWallet = null,
@@ -40,6 +103,7 @@ export default function ChatComponent({
   onRequestWalletConnect,
   onMessagesUpdate,
 }: ChatProps) {
+  // State management
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [input, setInput] = useState("");
   const [isOpen, setIsOpen] = useState(!isFloating);
@@ -49,29 +113,22 @@ export default function ChatComponent({
   const [hasDetectedWallet, setHasDetectedWallet] = useState(false);
   const [showWalletStory, setShowWalletStory] = useState(false);
   const [isWaitingForWalletInput, setIsWaitingForWalletInput] = useState(false);
-  const [tempWalletAddress, setTempWalletAddress] = useState<string | null>(
-    null
-  );
-  const [pendingWalletQuery, setPendingWalletQuery] = useState<string | null>(
-    null
-  );
+  const [tempWalletAddress, setTempWalletAddress] = useState<string | null>(null);
+  const [pendingWalletQuery, setPendingWalletQuery] = useState<string | null>(null);
+  const [blockAutoScroll, setBlockAutoScroll] = useState(true);
 
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasUserInteracted = useRef(false);
   const initialMessageCount = useRef(initialMessages.length);
 
-  // Disable initial auto-scroll to prevent focusing on the chat
-  const [blockAutoScroll, setBlockAutoScroll] = useState(true);
-
-  // Enable auto-scroll only after user interaction
+  // Helper functions
   const enableAutoScroll = () => {
     if (blockAutoScroll) {
       setBlockAutoScroll(false);
     }
   };
 
-  // Helper functions
   const getCurrentTime = () =>
     new Date().toLocaleTimeString("en-US", {
       hour: "2-digit",
@@ -91,15 +148,26 @@ export default function ChatComponent({
   };
 
   const addBotTyping = () => addMessage({ text: "...", sender: "bot" });
+  
   const removeBotTyping = () =>
     setMessages((prev) => prev.filter((msg) => msg.text !== "..."));
 
-  // Core functionality
+  const addSuggestionButtons = (suggestions: string[]) => {
+    setMessages((prevMessages) => [
+      ...prevMessages,
+      {
+        text: "SUGGESTION_BUTTONS",
+        sender: "bot",
+        timestamp: getCurrentTime(),
+        data: { suggestions },
+      },
+    ]);
+  };
+
+  // Core wallet functionalities
   const handleWalletDetected = () => {
     addMessage({
-      text: `Detected wallet: ${userWallet?.slice(0, 6)}...${userWallet?.slice(
-        -4
-      )}. Analyzing...`,
+      text: `Detected wallet: ${userWallet?.slice(0, 6)}...${userWallet?.slice(-4)}. Analyzing...`,
       sender: "bot",
     });
 
@@ -111,22 +179,7 @@ export default function ChatComponent({
 
       // Add suggestion buttons
       setTimeout(() => {
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          {
-            text: "SUGGESTION_BUTTONS",
-            sender: "bot",
-            timestamp: getCurrentTime(),
-            data: {
-              suggestions: [
-                "Show my recent transactions",
-                "What NFTs do I own?",
-                "Is my portfolio well diversified?", // Add this new suggestion
-                "Have I made any swaps recently?",
-              ],
-            },
-          },
-        ]);
+        addSuggestionButtons(DEFAULT_WALLET_SUGGESTIONS);
       }, 1000);
     }, 2000);
   };
@@ -169,13 +222,9 @@ export default function ChatComponent({
     setPendingWalletQuery(query);
   };
 
+  // API communication
   const processWalletQuery = async (query: string, walletAddress: string) => {
-    console.log(
-      `[Chat] Processing query: ${query} for wallet: ${walletAddress.slice(
-        0,
-        6
-      )}...`
-    );
+    console.log(`[Chat] Processing query: ${query} for wallet: ${walletAddress.slice(0, 6)}...`);
     addBotTyping();
 
     try {
@@ -187,9 +236,7 @@ export default function ChatComponent({
       });
 
       if (!response.ok) {
-        console.error(
-          `[Chat] HTTP Error: ${response.status} ${response.statusText}`
-        );
+        console.error(`[Chat] HTTP Error: ${response.status} ${response.statusText}`);
         const errorText = await response.text();
         console.error(`[Chat] Error response: ${errorText}`);
         throw new Error(`HTTP Error: ${response.status}`);
@@ -228,10 +275,11 @@ export default function ChatComponent({
     }
   };
 
+  // Bot response generation
   const generateBotResponse = (text: string) => {
     const lowerText = text.toLowerCase();
 
-    // Handle basic conversational responses that don't need API
+    // Handle basic conversational responses
     if (/thank|thanks|ty/i.test(lowerText)) {
       return addMessage({
         text: `You're welcome${userName ? ", " + userName : ""}!`,
@@ -247,11 +295,7 @@ export default function ChatComponent({
     }
 
     // For all portfolio/wallet-related queries, route to API if wallet is available
-    if (
-      /asset|breakdown|portfolio|transaction|nft|collectible|defi|balance|holdings|performance|swap|stake/i.test(
-        lowerText
-      )
-    ) {
+    if (/asset|breakdown|portfolio|transaction|nft|collectible|defi|balance|holdings|performance|swap|stake/i.test(lowerText)) {
       if (userWallet) {
         return processWalletQuery(text, userWallet);
       } else if (tempWalletAddress) {
@@ -261,14 +305,11 @@ export default function ChatComponent({
       }
     }
 
-    // For wallet performance/analytics, just use the API
+    // For wallet performance/analytics
     if (/wallet.*(performance|month|analyze)/i.test(lowerText)) {
-      if (userWallet) {
+      if (userWallet || tempWalletAddress) {
         addMessage({ text: "Analyzing your wallet...", sender: "bot" });
-        return processWalletQuery(text, userWallet);
-      } else if (tempWalletAddress) {
-        addMessage({ text: "Analyzing your wallet...", sender: "bot" });
-        return processWalletQuery(text, tempWalletAddress);
+        return processWalletQuery(text, userWallet || tempWalletAddress as string);
       } else {
         return addMessage({
           text: "I need your wallet connected first to analyze its performance.",
@@ -292,13 +333,12 @@ export default function ChatComponent({
 
     // Default response for anything else
     addMessage({
-      text: `I'm still learning about that${
-        userName ? ", " + userName : ""
-      }. If you'd like to check your wallet, just provide your wallet address or connect directly.`,
+      text: `I'm still learning about that${userName ? ", " + userName : ""}. If you'd like to check your wallet, just provide your wallet address or connect directly.`,
       sender: "bot",
     });
   };
 
+  // Message sending handler
   const handleSendMessage = () => {
     if (!input.trim()) return;
 
@@ -310,6 +350,7 @@ export default function ChatComponent({
     setInput("");
     addMessage({ text: userText, sender: "user" });
 
+    // Handle onboarding flow
     if (onboardingStep === 0) {
       setUserName(userText);
       setOnboardingStep(1);
@@ -325,18 +366,24 @@ export default function ChatComponent({
       return;
     }
 
+    // Handle wallet address input flow
     if (isWaitingForWalletInput) {
       // Check if text looks like a Solana address (simplistic)
       if (userText.length >= 32 && userText.length <= 44) {
         setTempWalletAddress(userText);
         setIsWaitingForWalletInput(false);
         addMessage({
-          text: `Thanks! I'll analyze wallet ${userText.slice(
-            0,
-            6
-          )}...${userText.slice(-4)}.`,
+          text: `Thanks! I'll analyze wallet ${userText.slice(0, 6)}...${userText.slice(-4)}.`,
           sender: "bot",
         });
+        
+        // Process any pending query
+        if (pendingWalletQuery) {
+          setTimeout(() => {
+            processWalletQuery(pendingWalletQuery, userText);
+            setPendingWalletQuery(null);
+          }, 1000);
+        }
         return;
       } else {
         addMessage({
@@ -347,81 +394,53 @@ export default function ChatComponent({
       }
     }
 
+    // Notify parent component
     if (onSendMessage) onSendMessage(userText);
 
+    // Handle wallet connection dialog
     if (hasAskedForWallet && !userWallet) {
-      if (/yes|connect|sure|okay/i.test(userText)) {
+      if (WALLET_REQUEST_PATTERNS.YES_CONNECT.test(userText)) {
         addMessage({
           text: "Redirecting to connect your wallet...",
           sender: "bot",
         });
         setTimeout(() => onRequestWalletConnect?.(), 1000);
         return;
-      } else if (/no|later|not now/i.test(userText)) {
+      } else if (WALLET_REQUEST_PATTERNS.NO_CONNECT.test(userText)) {
         addMessage({
           text: "No problem! Ask me anything about crypto or simply provide your wallet address.",
           sender: "bot",
         });
         return;
-      } else if (
-        /my wallet is|my address is|here's my wallet|here is my wallet|here is my address/i.test(
-          userText
-        )
-      ) {
+      } else if (WALLET_REQUEST_PATTERNS.WALLET_ADDRESS.test(userText)) {
         // Extract potential address - look for a 32-44 character string
         const addressMatch = userText.match(/[A-Za-z0-9]{32,44}/);
         if (addressMatch) {
           const walletAddress = addressMatch[0];
           setTempWalletAddress(walletAddress);
           addMessage({
-            text: `Thanks! I've registered your wallet address: ${walletAddress.slice(
-              0,
-              6
-            )}...${walletAddress.slice(
-              -4
-            )}. You can now ask me for information about this wallet.`,
+            text: `Thanks! I've registered your wallet address: ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}. You can now ask me for information about this wallet.`,
             sender: "bot",
           });
 
-          // Add suggestion for checking last transaction
+          // Add suggestion buttons
           setTimeout(() => {
-            setMessages((prevMessages) => [
-              ...prevMessages,
-              {
-                text: "SUGGESTION_BUTTONS",
-                sender: "bot",
-                timestamp: getCurrentTime(),
-                data: {
-                  suggestions: [
-                    "Show my transactions",
-                    "What NFTs do I own?",
-                    "Check my DeFi activity",
-                  ],
-                },
-              },
-            ]);
+            addSuggestionButtons(DEFAULT_WALLET_SUGGESTIONS);
           }, 1000);
           return;
         }
       }
     }
 
-    // Detect wallet-related queries
-    // Detect wallet-related queries
+    // Check for wallet-related queries
     const lowerText = userText.toLowerCase();
-    if (
-      lowerText.includes("last transaction") ||
-      lowerText.includes("recent transaction") ||
-      lowerText.includes("balance") ||
-      lowerText.includes("holdings") ||
-      lowerText.includes("analysis") ||
-      lowerText.includes("performance") ||
-      lowerText.includes("show my transactions") ||
-      // Add these lines to handle NFT queries
-      lowerText.includes("nft") ||
-      lowerText.includes("collectible") ||
-      lowerText.match(/what.*own/) // Captures "What NFTs do I own?"
-    ) {
+    const isWalletQuery = WALLET_QUERY_PATTERNS.some(pattern => 
+      typeof pattern === 'string' 
+        ? lowerText.includes(pattern) 
+        : pattern.test(lowerText)
+    );
+
+    if (isWalletQuery) {
       if (userWallet) {
         // If wallet connected, use this address
         processWalletQuery(userText, userWallet);
@@ -435,7 +454,7 @@ export default function ChatComponent({
       return;
     }
 
-    // Process other messages as before
+    // Process other messages
     setTimeout(() => {
       addBotTyping();
       setTimeout(() => {
@@ -492,153 +511,145 @@ export default function ChatComponent({
     />
   );
 
-  const renderPortfolioAnalysis = (data: any) => {
-    return (
-      <div className="bg-white p-4 rounded-xl w-full my-2 border border-purple-200">
-        <h3 className="text-purple-900 text-xl font-bold">
-          Portfolio Diversification Analysis
-        </h3>
+  const renderPortfolioAnalysis = (data: any) => (
+    <div className="bg-white p-4 rounded-xl w-full my-2 border border-purple-200">
+      <h3 className="text-purple-900 text-xl font-bold">
+        Portfolio Diversification Analysis
+      </h3>
 
-        <div className="mt-3 space-y-3">
-          <div className="flex flex-col">
-            <div className="flex items-center mb-2">
-              <div
-                className={`w-3 h-3 rounded-full mr-2 ${
-                  data.isDiversified ? "bg-green-500" : "bg-yellow-500"
-                }`}
-              ></div>
-              <span className="font-medium">
-                Diversification Status:{" "}
-                {data.isDiversified ? "Good" : "Needs Improvement"}
-              </span>
-            </div>
+      <div className="mt-3 space-y-3">
+        <div className="flex flex-col">
+          <div className="flex items-center mb-2">
+            <div
+              className={`w-3 h-3 rounded-full mr-2 ${
+                data.isDiversified ? "bg-green-500" : "bg-yellow-500"
+              }`}
+            ></div>
+            <span className="font-medium">
+              Diversification Status:{" "}
+              {data.isDiversified ? "Good" : "Needs Improvement"}
+            </span>
+          </div>
 
-            {data.tokenCount > 0 && (
-              <>
-                <p>
-                  You have{" "}
-                  <span className="font-medium">
-                    {data.tokenCount} different tokens
-                  </span>{" "}
-                  in your wallet.
-                </p>
+          {data.tokenCount > 0 && (
+            <>
+              <p>
+                You have{" "}
+                <span className="font-medium">
+                  {data.tokenCount} different tokens
+                </span>{" "}
+                in your wallet.
+              </p>
+              <p className="mt-1">
+                Your largest holding represents{" "}
+                <span className="font-medium">
+                  {data.mainTokenPercentage}%
+                </span>{" "}
+                of your portfolio.
+              </p>
+              {data.totalValue > 0 && (
                 <p className="mt-1">
-                  Your largest holding represents{" "}
+                  Total portfolio value:{" "}
                   <span className="font-medium">
-                    {data.mainTokenPercentage}%
-                  </span>{" "}
-                  of your portfolio.
+                    ${data.totalValue.toFixed(2)}
+                  </span>
                 </p>
-                {data.totalValue > 0 && (
-                  <p className="mt-1">
-                    Total portfolio value:{" "}
-                    <span className="font-medium">
-                      ${data.totalValue.toFixed(2)}
-                    </span>
-                  </p>
-                )}
-              </>
-            )}
-          </div>
-
-          <div>
-            <h4 className="font-medium mb-2">Recommendations:</h4>
-            <ul className="space-y-1 list-disc pl-5">
-              {data.recommendations?.map((rec: string, i: number) => (
-                <li key={i}>{rec}</li>
-              ))}
-            </ul>
-          </div>
+              )}
+            </>
+          )}
         </div>
 
-        <div className="mt-4 flex justify-end">
-          <button
-            onClick={() => {
-              enableAutoScroll();
-              // Suggest new actions after viewing analysis
-              if (typeof window !== "undefined") {
-                const event = new CustomEvent("suggestAfterTransactions", {
-                  detail: { transactionType: "Analysis" },
-                });
-                window.dispatchEvent(event);
-              }
-            }}
-            className="bg-purple-600 text-white px-4 py-1 rounded-full text-sm"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  const renderNFTInfo = (data: any) => {
-    console.log("Rendering NFT data:", data);
-
-    return (
-      <div className="bg-white p-4 rounded-xl w-full my-2 border border-purple-200">
-        <h3 className="text-purple-900 text-xl font-bold">Your NFTs</h3>
-
-        {!data.nfts || data.nfts.length === 0 ? (
-          <p className="text-gray-700 mt-2">No NFTs found</p>
-        ) : (
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            {data.nfts.map((nft: any, index: number) => (
-              <div
-                key={index}
-                className="border rounded-lg p-2 flex flex-col items-center"
-              >
-                {/* Rest of your NFT rendering code */}
-              </div>
+        <div>
+          <h4 className="font-medium mb-2">Recommendations:</h4>
+          <ul className="space-y-1 list-disc pl-5">
+            {data.recommendations?.map((rec: string, i: number) => (
+              <li key={i}>{rec}</li>
             ))}
-          </div>
-        )}
-
-        <div className="mt-4 flex justify-end">
-          <button
-            onClick={() => {
-              enableAutoScroll();
-              // Suggest new actions after viewing NFTs
-              if (typeof window !== "undefined") {
-                const event = new CustomEvent("suggestAfterTransactions", {
-                  detail: { transactionType: "NFT" },
-                });
-                window.dispatchEvent(event);
-              }
-            }}
-            className="bg-purple-600 text-white px-4 py-1 rounded-full text-sm"
-          >
-            Close
-          </button>
+          </ul>
         </div>
       </div>
-    );
-  };
 
-  const renderSuggestionButtons = (suggestions: string[]) => {
-    return (
-      <div className="flex flex-wrap gap-2 my-3 justify-center">
-        {suggestions.map((suggestion, index) => (
-          <button
-            key={index}
-            onClick={() => {
-              setInput(suggestion);
-              // Enable auto-scroll when clicking a suggestion
-              enableAutoScroll();
-              handleSendMessage();
-            }}
-            className="bg-purple-100 text-purple-800 px-3 py-1.5 rounded-full text-sm hover:bg-purple-200 transition"
-          >
-            {suggestion}
-          </button>
-        ))}
+      <div className="mt-4 flex justify-end">
+        <button
+          onClick={() => {
+            enableAutoScroll();
+            // Suggest new actions after viewing analysis
+            if (typeof window !== "undefined") {
+              const event = new CustomEvent("suggestAfterTransactions", {
+                detail: { transactionType: "Analysis" },
+              });
+              window.dispatchEvent(event);
+            }
+          }}
+          className="bg-purple-600 text-white px-4 py-1 rounded-full text-sm"
+        >
+          Close
+        </button>
       </div>
-    );
-  };
+    </div>
+  );
+
+  const renderNFTInfo = (data: any) => (
+    <div className="bg-white p-4 rounded-xl w-full my-2 border border-purple-200">
+      <h3 className="text-purple-900 text-xl font-bold">Your NFTs</h3>
+
+      {!data.nfts || data.nfts.length === 0 ? (
+        <p className="text-gray-700 mt-2">No NFTs found</p>
+      ) : (
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          {data.nfts.map((nft: any, index: number) => (
+            <div
+              key={index}
+              className="border rounded-lg p-2 flex flex-col items-center"
+            >
+              {/* NFT rendering code would go here */}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-4 flex justify-end">
+        <button
+          onClick={() => {
+            enableAutoScroll();
+            // Suggest new actions after viewing NFTs
+            if (typeof window !== "undefined") {
+              const event = new CustomEvent("suggestAfterTransactions", {
+                detail: { transactionType: "NFT" },
+              });
+              window.dispatchEvent(event);
+            }
+          }}
+          className="bg-purple-600 text-white px-4 py-1 rounded-full text-sm"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderSuggestionButtons = (suggestions: string[]) => (
+    <div className="flex flex-wrap gap-2 my-3 justify-center">
+      {suggestions.map((suggestion, index) => (
+        <button
+          key={index}
+          onClick={() => {
+            setInput(suggestion);
+            // Enable auto-scroll when clicking a suggestion
+            enableAutoScroll();
+            handleSendMessage();
+          }}
+          className="bg-purple-100 text-purple-800 px-3 py-1.5 rounded-full text-sm hover:bg-purple-200 transition"
+        >
+          {suggestion}
+        </button>
+      ))}
+    </div>
+  );
 
   // useEffect hooks - organized by purpose
 
-  // 1. Initial setup effects
+  // 1. Initial setup
   useEffect(() => {
     if (messages.length === 0) {
       const timer = setTimeout(() => {
@@ -651,7 +662,7 @@ export default function ChatComponent({
     }
   }, [messages.length]);
 
-  // 2. Wallet detection effects
+  // 2. Wallet detection
   useEffect(() => {
     if (userWallet && !hasDetectedWallet && onboardingStep >= 1) {
       setHasDetectedWallet(true);
@@ -680,39 +691,11 @@ export default function ChatComponent({
 
   // 5. Suggestions after transactions
   useEffect(() => {
-    const handleSuggestAfterTransactions = (event: any) => {
-      const txType = event.detail.transactionType;
-
-      let suggestions = [];
-      if (txType === "Swap") {
-        suggestions = [
-          "Show my token balances",
-          "What was my best swap?",
-          "Show my SOL transactions",
-        ];
-      } else if (txType === "NFT Trade" || txType === "NFT Mint") {
-        suggestions = [
-          "What NFTs do I own now?",
-          "Show my NFT trading history",
-          "What's my most valuable NFT?",
-        ];
-      } else {
-        suggestions = [
-          "How is my portfolio performing?",
-          "Show my DeFi activity",
-          "What tokens do I hold?",
-        ];
-      }
-
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        {
-          text: "SUGGESTION_BUTTONS",
-          sender: "bot",
-          timestamp: getCurrentTime(),
-          data: { suggestions },
-        },
-      ]);
+    const handleSuggestAfterTransactions = (event: Event) => {
+      const customEvent = event as CustomEvent<{transactionType: string}>;
+      const txType = customEvent.detail.transactionType;
+      const suggestions = POST_TRANSACTION_SUGGESTIONS[txType as keyof typeof POST_TRANSACTION_SUGGESTIONS] || POST_TRANSACTION_SUGGESTIONS["Default"];
+      addSuggestionButtons(suggestions);
     };
 
     window.addEventListener(
@@ -733,6 +716,7 @@ export default function ChatComponent({
     if (onMessagesUpdate) onMessagesUpdate(messages);
   }, [messages, onMessagesUpdate]);
 
+  // Main rendering
   return (
     <div
       className={`font-serif ${
