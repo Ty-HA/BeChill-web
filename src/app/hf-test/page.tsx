@@ -54,7 +54,7 @@ export default function HuggingFacePage() {
     ]
   });
   
-  const handleUpdatePortfolio = (e) => {
+  const handleUpdatePortfolio = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     try {
       const updatedPortfolio = JSON.parse(e.target.value);
       setPortfolioData(updatedPortfolio);
@@ -86,7 +86,7 @@ export default function HuggingFacePage() {
     `;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
@@ -119,7 +119,7 @@ export default function HuggingFacePage() {
           setResponse(prev => prev + newContent);
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erreur:', err);
       setError(err.message || 'Une erreur est survenue lors de l\'appel à l\'API');
     } finally {
@@ -145,7 +145,7 @@ export default function HuggingFacePage() {
     width: '100%',
     maxWidth: '768px',
     padding: '2rem',
-    boxSizing: 'border-box',
+    boxSizing: 'border-box' as 'border-box',
   };
 
   return (
