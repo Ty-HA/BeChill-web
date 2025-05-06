@@ -1,12 +1,12 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useLogin, useLogout, usePrivy } from "@privy-io/react-auth";
-import PrivyGate from "@/components/PrivyGate";
+import PrivyGate from "@/components/common/PrivyGate";
 import HeroSection from "./sections/HeroSection";
 import { CardCarouselSection } from "./sections/CardCarouselSection";
-import ChatComponent from "@/components/ChatComponent";
+import ChatComponent from "@/components/common/ChatComponent";
 import { Footer } from "./Footer";
-import AnimatedClouds from "./AnimatedClouds"; // Import the new component
+import AnimatedClouds from "../common/AnimatedClouds"; // Import the new component
 
 interface PrivyUser {
   wallet?: {

@@ -13,7 +13,7 @@ const HuggingFaceTest = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
@@ -55,7 +55,7 @@ const HuggingFaceTest = () => {
         output += newContent;
         setResponse(prev => prev + newContent);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erreur:', err);
       setError(err.message || 'Une erreur est survenue lors de l\'appel à l\'API');
     } finally {
@@ -83,7 +83,7 @@ const HuggingFaceTest = () => {
           <label className="block text-sm font-medium mb-2">Message utilisateur</label>
           <textarea
             className="w-full p-2 border rounded"
-            rows="3"
+            rows={3}
             value={userMessage}
             onChange={(e) => setUserMessage(e.target.value)}
             placeholder="Entrez votre message ici"
@@ -95,7 +95,7 @@ const HuggingFaceTest = () => {
           <label className="block text-sm font-medium mb-2">Message assistant (optionnel)</label>
           <textarea
             className="w-full p-2 border rounded"
-            rows="3"
+            rows={3}
             value={assistantMessage}
             onChange={(e) => setAssistantMessage(e.target.value)}
             placeholder="Message précédent de l'assistant (optionnel)"

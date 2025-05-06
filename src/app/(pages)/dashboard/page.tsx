@@ -4,7 +4,7 @@ import {
   BarChart2, PlusCircle, ArrowUp, ArrowDown, Info,
   Home, ChevronRight, TrendingUp, Users, Plus
 } from 'lucide-react';
-import ChatComponent from '@/components/ChatComponent';
+import ChatComponent from '@/components/common/ChatComponent';
 import { useLogin, useLogout, usePrivy } from "@privy-io/react-auth";
 
 

@@ -1,10 +1,10 @@
 "use client";
-import WalletAnalyzer from "@/components/WalletAnalyzer";
+import WalletTester from '@/components/wallet/WalletTester';
 
 export default function ApiTesterPage() {
   return (
     <div className="min-h-screen bg-gray-100 py-8">
-      <WalletAnalyzer />
+      <WalletTester />
     </div>
   );
 }

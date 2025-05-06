@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import * as apiService from "@/lib/api-service";
-import JsonViewer from "./JsonViewer";
+import JsonViewer from "../analytics/JsonViewer";
 
 export default function WalletTester() {
   const [walletAddress, setWalletAddress] = useState("");

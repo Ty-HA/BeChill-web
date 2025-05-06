@@ -1,5 +1,5 @@
 import './globals.css';
-import Providers from '@/components/Providers';
+import Providers from '@/components/common/Providers';
 
 export const metadata = {
   title: 'BeChill - Your Personal Asset Manager',

@@ -1,8 +1,8 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import WalletStoryWeb from "./WalletStoryWeb";
-import TransactionInfo from "./TransactionInfo";
+import WalletStoryWeb from "../wallet/WalletStoryWeb";
+import TransactionInfo from "../analytics/TransactionInfo";
 
 // Types
 type MessageType =

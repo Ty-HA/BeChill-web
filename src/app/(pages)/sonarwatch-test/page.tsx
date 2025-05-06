@@ -1,6 +1,6 @@
 "use client";
 import SonarWatchAnalyzer from "@/components/SonarWatchAnalyzer";
-import RawSonarWatchAnalyzer from "@/components/RawSonarwatchAnalyzer";
+import RawSonarWatchAnalyzer from "@/components/analytics/RawSonarwatchAnalyzer";
 
 export default function ApiTesterPage() {
   return (
