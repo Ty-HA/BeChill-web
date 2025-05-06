@@ -9,13 +9,18 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@huggingface/inference": "^3.12.1",
     "@privy-io/react-auth": "^2.10.0",
+    "@solana/web3.js": "^1.98.2",
+    "ai": "^4.3.13",
     "framer-motion": "^12.9.2",
     "lucide-react": "^0.503.0",
     "next": "15.3.1",
+    "openai": "^4.97.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-intersection-observer": "^9.16.0",
+    "solana-agent-kit": "^1.1.0",
     "strip-ansi": "^7.1.0",
     "tailwind-merge": "^3.2.0"
   },

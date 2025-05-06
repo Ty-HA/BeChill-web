@@ -269,7 +269,7 @@ export default function WalletTester() {
   };
 
   return (
-    <div className="container mx-auto p-4 max-w-6xl mb-24">
+    <div className="container mx-auto p-4 max-w-6xl mb-24 font-poppins">
       {" "}
       {/* Add bottom margin to avoid footer overlap */}
       <div className="flex justify-between items-center mb-6">

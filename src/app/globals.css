@@ -28,7 +28,6 @@
   font-style: italic;
 }
 
-
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -41,6 +40,12 @@
   --purple-light: #7036cd;
   --purple-medium: #5c26b3;
   --purple-dark: #540CCC;
+  
+  /* Font family variables */
+  --font-monument: 'PP Monument Extended', sans-serif;
+  --font-serif: 'DM Serif Text', serif;
+  --font-sans: Arial, 'Helvetica Neue', sans-serif;
+  --font-poppins: 'Poppins', sans-serif;
 }
 
 @theme inline {
@@ -58,7 +63,9 @@
 }
 
 body {
-  font-family: 'PP Monument Extended', sans-serif;
+  /* Changer la police par défaut du body ici si vous voulez que toute l'application 
+     utilise Poppins par défaut */
+  font-family: var(--font-monument);
   margin: 0;
   padding: 0;
   min-height: 100vh;
@@ -70,6 +77,23 @@ body {
   /* Pour assurer que le gradient couvre toute la page */
   background-attachment: fixed;
   background-size: cover;
+}
+
+/* Font classes */
+.font-monument {
+  font-family: var(--font-monument);
+}
+
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+.font-sans {
+  font-family: var(--font-sans);
+}
+
+.font-poppins {
+  font-family: var(--font-poppins);
 }
 
 /* Réinitialisation CSS pour uniformité */

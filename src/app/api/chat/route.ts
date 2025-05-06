@@ -3,58 +3,55 @@ import {
   getRecentTransactions,
   enrichTransactionsWithTokenMetadata,
 } from "@/lib/api-service";
-import { spawn } from 'child_process';
-import stripAnsi from 'strip-ansi';
+import { spawn } from "child_process";
+import stripAnsi from "strip-ansi";
+import { InferenceClient } from "@huggingface/inference";
 
-// Configuration
-const API_ENDPOINTS = {
-  FETCH_WALLET: "/api/fetch-wallet"
-};
 
 // Query types et patterns
 const QueryTypes = {
-  NFT: ['nft', 'non fungible', 'collectible', /what.*own/i],
-  PORTFOLIO: ['diversif', 'portfolio balance', /portfolio.*well/],
-  TRANSACTIONS: ['transaction', 'history'],
-  DEFI: ['defi', 'swap', 'stake', 'yield', 'liquidity', 'apy']
+  NFT: ["nft", "non fungible", "collectible", /what.*own/i],
+  PORTFOLIO: ["diversif", "portfolio balance", /portfolio.*well/],
+  TRANSACTIONS: ["transaction", "history"],
+  DEFI: ["defi", "swap", "stake", "yield", "liquidity", "apy"],
 };
 
 const TOKEN_REGEX = /\b(sol|usdc|eth|btc|bonk|jup|orca|ray|msol|jsol|usdt)\b/i;
 
 // Fonction utilitaire pour récupérer les données du wallet de Sonarwatch
 async function fetchWalletDataDirect(address: string): Promise<any[]> {
-  const sonarwatchPath = '/Users/tyha/Projects/api/sonarwatch-backend';
-  
+  const sonarwatchPath = "/Users/tyha/Projects/api/sonarwatch-backend";
+
   return new Promise((resolve, reject) => {
     const fetcher = spawn(
-      'npx',
-      ['nx', 'run', 'plugins:run-fetcher', 'wallet-tokens-solana', address],
+      "npx",
+      ["nx", "run", "plugins:run-fetcher", "wallet-tokens-solana", address],
       {
         cwd: sonarwatchPath,
         shell: true,
       }
     );
 
-    let output = '';
-    let errorOutput = '';
+    let output = "";
+    let errorOutput = "";
 
-    fetcher.stdout.on('data', (data) => {
+    fetcher.stdout.on("data", (data) => {
       output += data.toString();
     });
 
-    fetcher.stderr.on('data', (data) => {
+    fetcher.stderr.on("data", (data) => {
       errorOutput += data.toString();
     });
 
-    fetcher.on('close', () => {
+    fetcher.on("close", () => {
       try {
         const cleanOutput = stripAnsi(output);
 
-        const startIndex = cleanOutput.indexOf('[');
-        const endIndex = cleanOutput.lastIndexOf(']') + 1;
+        const startIndex = cleanOutput.indexOf("[");
+        const endIndex = cleanOutput.lastIndexOf("]") + 1;
 
         if (startIndex === -1 || endIndex === -1) {
-          throw new Error('No JSON array found in output');
+          throw new Error("No JSON array found in output");
         }
 
         let jsonLike = cleanOutput.substring(startIndex, endIndex);
@@ -63,7 +60,7 @@ async function fetchWalletDataDirect(address: string): Promise<any[]> {
         jsonLike = jsonLike
           .replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g, '$1"$2":') // clé non-quotée => "clé":
           .replace(/'([^']*)'/g, (_, p1) => `"${p1.replace(/"/g, '\\"')}"`) // quotes simples => doubles
-          .replace(/\bundefined\b/g, 'null'); // undefined => null
+          .replace(/\bundefined\b/g, "null"); // undefined => null
 
         const parsed = JSON.parse(jsonLike);
         resolve(parsed);
@@ -262,46 +259,297 @@ function adaptTransactionsData(apiData: any) {
   }
 }
 
+// Fonction d'analyse IA avec Hugging Face
+// Fonction d'analyse IA avec Hugging Face
+async function getAIRecommendations(tokens: any[], totalValue: number) {
+    // Préparer des données plus détaillées pour l'IA
+    const portfolioData = {
+      tokenCount: tokens.length,
+      totalValue: totalValue.toFixed(2),
+      isWellDiversified: tokens.length >= 3 && (tokens[0]?.value || 0) / totalValue < 0.3,
+      tokens: tokens.map(token => ({
+        symbol: token.data?.symbol || 'Unknown',
+        name: token.data?.name || 'Unknown',
+        value: token.value?.toFixed(2) || 0,
+        percentage: totalValue > 0 ? (((token.value || 0) * 100) / totalValue).toFixed(1) + '%' : '0%',
+        type: token.data?.type || 'Unknown'
+      })).sort((a, b) => parseFloat(b.percentage) - parseFloat(a.percentage))
+    };
+  
+    // Créer un prompt plus détaillé avec plus de contexte
+    const prompt = `
+  You are a specialized crypto portfolio analyst. Given this detailed portfolio information:
+  ${JSON.stringify(portfolioData, null, 2)}
+  
+  Provide 5 specific and personalized recommendations to improve portfolio diversification and risk management.
+  Focus on actionable advice that directly addresses the issues in this specific portfolio.
+  
+  IMPORTANT:
+  1. Each recommendation must be specific to THIS portfolio, not generic advice
+  2. Include specific percentages and values when relevant
+  3. Mention specific assets in the portfolio by name
+  4. Suggest specific actions like "Reduce X by Y%" or "Consider adding Z"
+  5. Format as a clean bullet list with each point starting with *
+  
+  Example of good recommendations:
+  * Your Sahur token represents 97% of your portfolio. Reduce this position to less than 30% to minimize risk
+  * Your portfolio lacks stablecoins - consider allocating 10-20% to USDC or USDT for stability
+  * Add 1-2 large-cap tokens like BTC or ETH to balance your exposure to smaller tokens
+    `;
+  
+    // Obtenir la clé API depuis les variables d'environnement
+    const apiKey = process.env.HUGGINGFACE_API_KEY;
+    
+    console.log("[API] Calling Hugging Face API with prompt excerpt:", prompt.substring(0, 150) + "...");
+    console.log("[API] Using API key:", apiKey ? "API key found" : "No API key");
+  
+    try {
+      if (!apiKey) {
+        console.warn("[API] Hugging Face API key not found in environment variables");
+        return getSmartDefaultRecommendations(portfolioData);
+      }
+  
+      // Essayer avec différents modèles en cas d'échec
+      const models = [
+        "Qwen/Qwen3-235B-A22B"  // Chemin complet incluant l'auteur/organisation
+      ];
+  
+      let result = null;
+      let response = null;
+  
+      // Essayer chaque modèle jusqu'à ce qu'on obtienne une réponse
+      for (const model of models) {
+        console.log(`[API] Trying model: ${model}`);
+        
+        try {
+          response = await fetch(
+            `https://api-inference.huggingface.co/models/${model}`,
+            {
+              headers: { 
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json" 
+              },
+              method: "POST",
+              body: JSON.stringify({
+                inputs: prompt,
+                parameters: { 
+                  max_new_tokens: 500,
+                  temperature: 0.3,
+                  return_full_text: false,
+                  top_p: 0.95
+                }
+              }),
+              // Ajouter un timeout pour éviter d'attendre trop longtemps
+              // signal: AbortSignal.timeout(10000)
+            }
+          );
+          
+          if (response.ok) {
+            result = await response.json();
+            
+            console.log("[API] HF API response status:", response.status);
+            console.log("[API] HF API response:", JSON.stringify(result).substring(0, 150) + "...");
+            
+            if (result && result[0]?.generated_text) {
+              break; // Sortir de la boucle si nous avons obtenu une réponse valide
+            }
+          } else {
+            console.warn(`[API] Failed with model ${model}, status: ${response.status}`);
+          }
+        } catch (modelError) {
+          console.warn(`[API] Error with model ${model}:`, modelError);
+          // Continuer avec le modèle suivant
+        }
+      }
+      
+      // Si aucun modèle n'a fonctionné ou si la réponse est vide
+      if (!result || !result[0]?.generated_text) {
+        console.warn("[API] All models failed or empty responses");
+        return getSmartDefaultRecommendations(portfolioData);
+      }
+      
+      const generatedText = result[0].generated_text;
+      
+      // Essayer différentes méthodes pour extraire les recommandations
+      
+      // 1. D'abord, chercher les lignes commençant par *
+      let recommendations = generatedText
+        .split('\n')
+        .filter((line: string) => line.trim().startsWith('*'))
+        .map((line: string) => line.trim().substring(1).trim());
+      
+      // 2. Si ça n'a pas fonctionné, chercher d'autres formats de liste
+      if (recommendations.length === 0) {
+        recommendations = generatedText
+          .split('\n')
+          .filter((line: string) => line.trim().match(/^[\d\.\-\•]+\s/))
+          .map((line: string) => line.trim().replace(/^[\d\.\-\•]+\s/, '').trim());
+      }
+      
+      // 3. Si toujours rien, essayer de diviser en phrases
+      if (recommendations.length === 0) {
+        const sentences = generatedText
+          .split(/[.!?]/)
+          .map((s: string) => s.trim())
+          .filter((s: string) => s.length > 20 && s.length < 150);
+        
+        if (sentences.length >= 3) {
+          recommendations = sentences.slice(0, 5);
+        }
+      }
+      
+      // Si nous avons suffisamment de recommandations, les retourner
+      if (recommendations.length >= 3) {
+        console.log("[API] Generated AI recommendations successfully:", recommendations.length);
+        return recommendations.slice(0, 5); // Limiter à 5 recommandations
+      } else {
+        console.log("[API] Not enough AI recommendations, using smart defaults");
+        return getSmartDefaultRecommendations(portfolioData);
+      }
+    } catch (error) {
+      console.error("[API] AI recommendation error:", error);
+      return getSmartDefaultRecommendations(portfolioData);
+    }
+  }
+  
+  // Version améliorée des recommandations par défaut
+  function getSmartDefaultRecommendations(portfolioData: any) {
+    const recommendations: string[] = [];
+    const tokens = portfolioData.tokens || [];
+    const mainToken = tokens.length > 0 ? tokens[0] : null;
+    const mainTokenPercentage = mainToken ? parseFloat(mainToken.percentage) : 0;
+    const mainTokenSymbol = mainToken?.symbol || "your largest holding";
+    const tokenCount = portfolioData.tokenCount || 0;
+    
+    // Recommandations basées sur l'état réel du portefeuille
+    if (mainTokenPercentage > 50) {
+      recommendations.push(`Your ${mainTokenSymbol} represents ${mainTokenPercentage}% of your portfolio. Consider reducing this position to less than 30% to minimize risk`);
+    }
+    
+    if (tokenCount < 5) {
+      recommendations.push(`Your portfolio only has ${tokenCount} different tokens. Adding 3-5 more assets would significantly improve diversification`);
+    }
+    
+    // Vérifier la présence de crypto majeures
+    const hasBTC = tokens.some((t: any) => t.symbol?.toUpperCase() === 'BTC');
+    const hasETH = tokens.some((t: any) => t.symbol?.toUpperCase() === 'ETH');
+    const hasSOL = tokens.some((t: any) => t.symbol?.toUpperCase() === 'SOL');
+    
+    if (!hasBTC && !hasETH && !hasSOL) {
+      recommendations.push("Your portfolio lacks major cryptocurrencies. Consider adding BTC, ETH, or SOL for stability");
+    }
+    
+    // Vérifier la présence de stablecoins
+    const hasStablecoins = tokens.some((t: any) => ['USDC', 'USDT', 'DAI', 'BUSD'].includes(t.symbol?.toUpperCase()));
+    
+    if (!hasStablecoins) {
+      recommendations.push("Add some stablecoins (USDC, USDT) to reduce volatility and provide a safety buffer");
+    }
+    
+    // Ajouter des recommandations plus génériques si nécessaire
+    if (recommendations.length < 3) {
+      recommendations.push("Spread investments across different sectors in crypto (DeFi, gaming, infrastructure) to minimize sector-specific risks");
+      recommendations.push("Consider allocating 5-10% to newer, high-potential projects for growth while maintaining most of your portfolio in established assets");
+    }
+    
+    return recommendations;
+  }
+
+// Recommandations par défaut basées sur des règles simples
+function getDefaultRecommendations(portfolioData: any) {
+  const recommendations = [];
+  const mainTokenPercentage =
+    portfolioData.tokens.length > 0 ? portfolioData.tokens[0].percentage : 0;
+
+  if (portfolioData.tokenCount < 3) {
+    recommendations.push(
+      "Consider adding more diverse assets to your portfolio for better risk management"
+    );
+  }
+
+  if (mainTokenPercentage > 50) {
+    recommendations.push(
+      `Your largest holding represents ${Math.round(
+        mainTokenPercentage
+      )}% of your portfolio. Consider rebalancing to reduce concentration risk`
+    );
+  }
+
+  // Ajouter des recommandations génériques si nécessaire
+  if (recommendations.length < 2) {
+    recommendations.push(
+      "Consider adding major cryptocurrencies (BTC, ETH, SOL) for stability"
+    );
+    recommendations.push(
+      "Add some stablecoins (USDC, USDT) to reduce volatility"
+    );
+    recommendations.push(
+      "Spread investments across different sectors in crypto (DeFi, gaming, infrastructure)"
+    );
+    recommendations.push(
+      "Avoid having any single asset represent more than 30% of your portfolio"
+    );
+  }
+
+  return recommendations;
+}
+
 // Define the valid query types as a type
-type QueryTypeKey = 'NFT' | 'PORTFOLIO' | 'TRANSACTIONS' | 'DEFI' | 'TOKEN' | 'UNKNOWN';
+type QueryTypeKey =
+  | "NFT"
+  | "PORTFOLIO"
+  | "TRANSACTIONS"
+  | "DEFI"
+  | "TOKEN"
+  | "UNKNOWN";
 
 // Détecter le type de requête
 function detectQueryType(message: string): QueryTypeKey {
   const messageLC = message.toLowerCase();
-  
+
   for (const [type, patterns] of Object.entries(QueryTypes)) {
-    if (patterns.some((pattern: string | RegExp) => 
-      typeof pattern === 'string' 
-        ? messageLC.includes(pattern) 
-        : pattern.test(messageLC)
-    )) {
+    if (
+      patterns.some((pattern: string | RegExp) =>
+        typeof pattern === "string"
+          ? messageLC.includes(pattern)
+          : pattern.test(messageLC)
+      )
+    ) {
       return type as QueryTypeKey;
     }
   }
-  
+
   // Vérification des tokens spécifiques
   if (TOKEN_REGEX.test(messageLC)) {
-    return 'TOKEN';
+    return "TOKEN";
   }
-  
-  return 'UNKNOWN';
+
+  return "UNKNOWN";
 }
 
 // Définir l'interface pour les handlers
-type HandlerFunction = (walletAddress: string, message?: string) => Promise<any>;
+type HandlerFunction = (
+  walletAddress: string,
+  message?: string
+) => Promise<any>;
 
 // Handler pour les différents types de requêtes
-const queryHandlers: Record<Exclude<QueryTypeKey, 'UNKNOWN'>, HandlerFunction> = {
+const queryHandlers: Record<
+  Exclude<QueryTypeKey, "UNKNOWN">,
+  HandlerFunction
+> = {
   // Handler pour les requêtes NFT
   NFT: async (walletAddress: string) => {
     try {
       console.log("[API] Fetching NFTs from Sonarwatch");
-      
+
       // Utiliser l'appel direct aux commandes Sonarwatch
       const nftData = await fetchWalletDataDirect(walletAddress);
-      
+
       // Extraire les NFTs de la réponse
-      const nftPlatform = nftData.find((r: any) => r.platformId === 'wallet-nfts');
+      const nftPlatform = nftData.find(
+        (r: any) => r.platformId === "wallet-nfts"
+      );
       const nfts = nftPlatform?.data?.assets || [];
 
       if (nfts.length > 0) {
@@ -326,12 +574,12 @@ const queryHandlers: Record<Exclude<QueryTypeKey, 'UNKNOWN'>, HandlerFunction> =
       };
     }
   },
-  
+
   // Handler pour les requêtes de diversification de portefeuille
   PORTFOLIO: async (walletAddress: string) => {
     try {
       console.log("[API] Analyzing portfolio diversification via Sonarwatch");
-      
+
       // Utiliser l'appel direct aux commandes Sonarwatch
       const tokensData = await fetchWalletDataDirect(walletAddress);
 
@@ -381,13 +629,8 @@ const queryHandlers: Record<Exclude<QueryTypeKey, 'UNKNOWN'>, HandlerFunction> =
         }
       }
 
-      // Ajouter des recommandations
-      const recommendations = [
-        "Consider adding major cryptocurrencies (BTC, ETH, SOL) for stability",
-        "Add some stablecoins (USDC, USDT) to reduce volatility",
-        "Spread investments across different sectors in crypto (DeFi, gaming, infrastructure)",
-        "Avoid having any single asset represent more than 30% of your portfolio",
-      ];
+      // Utiliser l'IA pour générer des recommandations personnalisées
+      const recommendations = await getAIRecommendations(tokens, totalValue);
 
       return {
         response: diversificationMessage,
@@ -403,13 +646,14 @@ const queryHandlers: Record<Exclude<QueryTypeKey, 'UNKNOWN'>, HandlerFunction> =
     } catch (apiError) {
       console.error("[API] API Error when analyzing portfolio:", apiError);
       return {
-        response: "I couldn't analyze your portfolio diversification due to a technical issue. Please try again later.",
+        response:
+          "I couldn't analyze your portfolio diversification due to a technical issue. Please try again later.",
         data: {},
         type: "text",
       };
     }
   },
-  
+
   // Handler pour les requêtes de transactions
   TRANSACTIONS: async (walletAddress: string) => {
     try {
@@ -417,37 +661,42 @@ const queryHandlers: Record<Exclude<QueryTypeKey, 'UNKNOWN'>, HandlerFunction> =
       // Récupérer les 10 transactions les plus récentes
       const apiData = await getRecentTransactions(walletAddress, 10);
       console.log("[API] Data received, adapting to format");
-      
+
       const formattedData = adaptTransactionsData(apiData);
-      
+
       // Essayer d'enrichir les transactions avec les métadonnées des tokens si possible
       try {
         console.log("[API] Enriching transactions with token metadata");
-        formattedData.transactions = await enrichTransactionsWithTokenMetadata(formattedData.transactions);
+        formattedData.transactions = await enrichTransactionsWithTokenMetadata(
+          formattedData.transactions
+        );
       } catch (enrichError) {
         console.warn("[API] Error enriching transactions:", enrichError);
         // Continuer sans enrichissement
       }
-      
+
       console.log("[API] Data successfully processed");
-      
-      return { 
-        response: "Here are your most recent transactions:", 
+
+      return {
+        response: "Here are your most recent transactions:",
         data: formattedData,
-        type: "wallet-transaction" 
+        type: "wallet-transaction",
       };
     } catch (apiError) {
       console.error("[API] API Error:", apiError);
-      
-      const errorMessage = apiError instanceof Error ? apiError.message : "Unknown";
-      return { 
-        response: "Unable to retrieve transaction data for this wallet. Error: " + errorMessage, 
+
+      const errorMessage =
+        apiError instanceof Error ? apiError.message : "Unknown";
+      return {
+        response:
+          "Unable to retrieve transaction data for this wallet. Error: " +
+          errorMessage,
         data: { transactions: [] },
-        type: "wallet-transaction"
+        type: "wallet-transaction",
       };
     }
   },
-  
+
   // Handler pour les requêtes DeFi
   DEFI: async (walletAddress: string) => {
     try {
@@ -494,12 +743,12 @@ const queryHandlers: Record<Exclude<QueryTypeKey, 'UNKNOWN'>, HandlerFunction> =
       };
     }
   },
-  
+
   // Handler pour les requêtes spécifiques aux tokens
   TOKEN: async (walletAddress: string, message: string = "") => {
     const tokenMatch = message.toLowerCase().match(TOKEN_REGEX);
     if (!tokenMatch) return null;
-    
+
     const tokenSymbol = tokenMatch[0].toUpperCase();
     try {
       console.log(`[API] Filtering for ${tokenSymbol} transactions`);
@@ -536,7 +785,7 @@ const queryHandlers: Record<Exclude<QueryTypeKey, 'UNKNOWN'>, HandlerFunction> =
         type: "wallet-transaction",
       };
     }
-  }
+  },
 };
 
 export async function POST(request: NextRequest) {
@@ -556,16 +805,20 @@ export async function POST(request: NextRequest) {
 
     // Déterminer le type de requête et traiter en conséquence
     const queryType = detectQueryType(message);
-    
-    if (queryType === 'TOKEN') {
+
+    if (queryType === "TOKEN") {
       const result = await queryHandlers.TOKEN(walletAddress, message);
       if (result) {
         return NextResponse.json(result);
       }
-    } else if (queryType !== 'UNKNOWN' && queryType in queryHandlers) {
-      return NextResponse.json(await queryHandlers[queryType as Exclude<QueryTypeKey, 'UNKNOWN'>](walletAddress));
+    } else if (queryType !== "UNKNOWN" && queryType in queryHandlers) {
+      return NextResponse.json(
+        await queryHandlers[queryType as Exclude<QueryTypeKey, "UNKNOWN">](
+          walletAddress
+        )
+      );
     }
-    
+
     // Fallback pour les autres types de requêtes
     return NextResponse.json({
       response:
