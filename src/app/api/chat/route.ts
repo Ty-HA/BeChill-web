@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   getRecentTransactions,
   enrichTransactionsWithTokenMetadata,
-} from "@/lib/api-service";
+} from "@/lib/api/api-service";
 import { spawn } from "child_process";
 import stripAnsi from "strip-ansi";
 import { InferenceClient } from "@huggingface/inference";

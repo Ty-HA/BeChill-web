@@ -1,4 +1,4 @@
-// lib/sonarwatchService.ts
+
 // lib/sonarwatchService.ts
 export async function fetchNFTsFromSonarwatch(walletAddress: string) {
     try {
