@@ -1,10 +1,12 @@
 "use client";
-import WalletAnalyzer from "@/components/wallet/WalletAnalyzer";
+// Old sonarwatch api test:
+// import WalletAnalyzer from "@/components/wallet/WalletAnalyzer";
+import DirectusExplorer from "@/components/analytics/DirectusExplorer";
 
-export default function ApiTesterPage() {
+export default function WalletAnalyzerPage() {
   return (
-    <div className="min-h-screen bg-gray-100 py-8">
-      <WalletAnalyzer />
+    <div className="p-6">
+      <DirectusExplorer />
     </div>
   );
 }
