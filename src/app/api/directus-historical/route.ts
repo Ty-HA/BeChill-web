@@ -29,12 +29,27 @@ export async function GET(req: NextRequest) {
     });
 
     if (!response.ok) {
-      return NextResponse.json({ error: "Erreur côté Directus" }, { status: 500 });
+      const errorText = await response.text();
+      console.error("❌ Erreur brute Directus:", errorText);
+      return NextResponse.json(
+        { error: "Erreur Directus", detail: errorText },
+        { status: 500 }
+      );
+    }
+
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: "Erreur côté Directus" },
+        { status: 500 }
+      );
     }
 
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    return NextResponse.json({ error: "Erreur réseau ou CORS" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Erreur réseau ou CORS" },
+      { status: 500 }
+    );
   }
 }

@@ -1,5 +1,6 @@
+// src/components/dashboard/Header.tsx
 import React from 'react';
-import { RefreshCcw, Plus } from 'lucide-react';
+import { RefreshCcw } from 'lucide-react';
 import { formatWalletAddress } from '@/utils/walletAddressUtils';
 
 interface HeaderProps {
@@ -7,12 +8,21 @@ interface HeaderProps {
   walletAddress: string | null;
   isLoading: boolean;
   refreshData: () => void;
+  isPrivyConnected: boolean;
+  manualAddress: string;
+  setManualAddress: (val: string) => void;
+  onManualSearch: () => void;
 }
 
-/**
- * Composant Header simplifiée au maximum
- */
-const Header: React.FC<HeaderProps> = ({ activeTab, walletAddress, isLoading, refreshData }) => {
+const Header: React.FC<HeaderProps> = ({
+  activeTab,
+  walletAddress,
+  isLoading,
+  refreshData,
+  manualAddress,
+  setManualAddress,
+  onManualSearch
+}) => {
   return (
     <header className="flex items-center justify-between mb-6">
       <div>
@@ -32,19 +42,23 @@ const Header: React.FC<HeaderProps> = ({ activeTab, walletAddress, isLoading, re
           </div>
         )}
       </div>
+
       <div className="flex space-x-4">
-        <div className="relative">
+        <div className="relative flex items-center">
           <input 
             type="text" 
-            placeholder="Search..."
+            placeholder="Enter wallet address..."
+            value={manualAddress}
+            onChange={(e) => setManualAddress(e.target.value)}
             className="w-64 bg-white text-gray-800 px-4 py-2 rounded-lg shadow" 
           />
-          <div className="absolute right-3 top-2.5 text-gray-400">⌘K</div>
+          <button
+            onClick={onManualSearch}
+            className="ml-2 px-3 py-1 bg-purple-600 text-white text-sm rounded"
+          >
+            Analyse
+          </button>
         </div>
-        <button className="bg-[#FFFF4F] hover:bg-yellow-300 text-[#7036cd] px-6 py-2 rounded-lg shadow-md flex items-center">
-          <Plus size={18} className="mr-2" />
-          Ajouter des actifs
-        </button>
       </div>
     </header>
   );

@@ -1,56 +1,76 @@
-import React from 'react';
-import { Doughnut } from 'react-chartjs-2';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
-import { getAssetColorValue } from '@/utils/Formatter'; // Chemin corrigé pour pointer vers le fichier formatters.ts
+"use client";
 
-// Enregistrer les composants Chart.js
+import React from "react";
+import { Doughnut } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+} from "chart.js";
+
 ChartJS.register(ArcElement, Tooltip, Legend);
 
+interface Asset {
+  symbol: string;
+  valueEUR: number;
+}
+
 interface AssetDistributionChartProps {
-  assets: Array<{
-    name: string;
-    balance: string;
-    value: string;
-    change: string;
-    trending: string;
-    percentage: number;
-  }>;
+  assets: Asset[];
   totalValue: number;
 }
 
-const AssetDistributionChart: React.FC<AssetDistributionChartProps> = ({ assets, totalValue }) => {
-  // Préparer les données pour le graphique en donut
+const AssetDistributionChart: React.FC<AssetDistributionChartProps> = ({
+  assets,
+  totalValue,
+}) => {
+  const labels = assets.map((a) => a.symbol);
+  const data = assets.map((a) =>
+    totalValue > 0 ? (a.valueEUR / totalValue) * 100 : 0
+  );
+
   const chartData = {
-    labels: assets.map(asset => asset.name.split(' ')[0]),
+    labels,
     datasets: [
       {
-        data: assets.map(asset => asset.percentage),
-        backgroundColor: assets.map(asset => getAssetColorValue(asset.name)),
-        borderColor: 'white',
+        data,
+        backgroundColor: [
+          "#7036cd",
+          "#facc15",
+          "#4ade80",
+          "#38bdf8",
+          "#fb7185",
+          "#f472b6",
+          "#818cf8",
+          "#a78bfa",
+          "#34d399",
+          "#fcd34d",
+        ],
+        borderColor: "white",
         borderWidth: 2,
-        hoverOffset: 4
-      }
-    ]
+        hoverOffset: 4,
+      },
+    ],
   };
-  
+
   const options = {
     responsive: true,
     maintainAspectRatio: false,
-    cutout: '70%',
+    cutout: "70%",
     plugins: {
       legend: {
-        display: false
+        display: false,
       },
       tooltip: {
         callbacks: {
-          label: function(context: any) {
-            return `${context.label}: ${context.raw}%`;
-          }
-        }
-      }
-    }
+          label: (ctx: any) =>
+            `${ctx.label}: ${parseFloat(ctx.raw).toFixed(2)}%`,
+        },
+      },
+    },
   };
-  
+
   return (
     <div className="h-40">
       <Doughnut data={chartData} options={options} />
