@@ -12,7 +12,7 @@ import {
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 interface Asset {
-  symbol: string;
+  name: string;           // ✅ on utilise name maintenant
   valueEUR: number;
 }
 
@@ -25,7 +25,7 @@ const AssetDistributionChart: React.FC<AssetDistributionChartProps> = ({
   assets,
   totalValue,
 }) => {
-  const labels = assets.map((a) => a.symbol);
+  const labels = assets.map((a) => a.name);
   const data = assets.map((a) =>
     totalValue > 0 ? (a.valueEUR / totalValue) * 100 : 0
   );

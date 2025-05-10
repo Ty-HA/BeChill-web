@@ -1,6 +1,8 @@
 /**
  * Formate les transactions pour l'affichage dans le tableau d'historique
  */
+import { getTokenNameFromMint } from "@/lib/tokenMap";
+
 export const formatTransactionsForDashboard = (txHistory: any[]) => {
   if (!txHistory || !Array.isArray(txHistory)) return [];
   
@@ -45,24 +47,30 @@ export const formatTransactionsForDashboard = (txHistory: any[]) => {
   }).sort((a, b) => b.timestamp - a.timestamp);
 };
 
-/**
- * Récupère la couleur associée à un actif
- */
-export const getAssetColor = (assetName: string) => {
-  const symbol = assetName.split(' ')[0];
-  if (symbol === 'Solana') return 'bg-[#7036cd]';
-  if (symbol === 'Jupiter') return 'bg-[#FFFF4F]';
-  if (symbol === 'Bonk' || symbol === 'BONK') return 'bg-white border border-gray-300';
-  return 'bg-gray-300';
+export const getAssetColor = (symbol: string) => {
+  const name = getTokenNameFromMint(symbol) || symbol;
+  switch (name.toLowerCase()) {
+    case "solana":
+      return "bg-[#7036cd]";
+    case "jupiter":
+      return "bg-[#FFFF4F]";
+    case "bonk":
+      return "bg-white border border-gray-300";
+    default:
+      return "bg-gray-300";
+  }
 };
 
-/**
- * Récupère la valeur de couleur d'un actif (pour les styles CSS)
- */
-export const getAssetColorValue = (assetName: string) => {
-  const symbol = assetName.split(' ')[0];
-  if (symbol === 'Solana') return '#7036cd';
-  if (symbol === 'Jupiter') return '#FFFF4F';
-  if (symbol === 'Bonk' || symbol === 'BONK') return 'white';
-  return 'gray';
+export const getAssetColorValue = (symbol: string) => {
+  const name = getTokenNameFromMint(symbol) || symbol;
+  switch (name.toLowerCase()) {
+    case "solana":
+      return "#7036cd";
+    case "jupiter":
+      return "#FFFF4F";
+    case "bonk":
+      return "white";
+    default:
+      return "gray";
+  }
 };

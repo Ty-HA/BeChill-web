@@ -26,18 +26,18 @@ export const getSolBalance = async (address: string): Promise<number> => {
 };
 
 const TOKEN_MINT_TO_SYMBOL: Record<string, string> = {
-  "So11111111111111111111111111111111111111112": "SOL",
-  "JUP4Fb2cqiRUcaTHdrPC8h2gNsA2ETXiPDD33WcGuJB": "JUP",
-  "DezXfFz9NfUwU4QeEjGFk94QpKkpYzxhpT2RSyBPa9CH": "BONK",
+  So11111111111111111111111111111111111111112: "SOL",
+  JUP4Fb2cqiRUcaTHdrPC8h2gNsA2ETXiPDD33WcGuJB: "JUP",
+  DezXfFz9NfUwU4QeEjGFk94QpKkpYzxhpT2RSyBPa9CH: "BONK",
 };
 
 export const refreshWalletData = async (address: string) => {
   try {
     const balanceResponse = await axios.post(HELIUS_API_URL, {
-      jsonrpc: '2.0',
-      id: 'balance',
-      method: 'getBalance',
-      params: [address]
+      jsonrpc: "2.0",
+      id: "balance",
+      method: "getBalance",
+      params: [address],
     });
 
     const solBalance = balanceResponse.data?.result?.value / 10 ** 9 || 0;
@@ -53,19 +53,19 @@ export const refreshWalletData = async (address: string) => {
       solBalance,
       walletData: {},
       txHistory: [],
-      formattedAssets: parsedTokens.map(token => ({
+      formattedAssets: parsedTokens.map((token) => ({
         symbol: token.symbol,
-        amount: token.amount
-      }))
+        amount: token.amount,
+      })),
     };
   } catch (error) {
-    console.error('[HELIUS] refreshWalletData failed:', error);
+    console.error("[HELIUS] refreshWalletData failed:", error);
     return {
       success: false,
       solBalance: 0,
       walletData: {},
       txHistory: [],
-      formattedAssets: []
+      formattedAssets: [],
     };
   }
 };
@@ -123,7 +123,6 @@ export const testWalletAddress = async (address: string) => {
       solBalance,
       formattedAssets: tokens, // important !
     };
-    
   } catch (error) {
     console.error("Test échoué", error);
     return {
@@ -132,4 +131,55 @@ export const testWalletAddress = async (address: string) => {
       formattedAssets: [],
     };
   }
+};
+
+export const fetchWalletData = refreshWalletData;
+
+export const fetchSolBalance = async (address: string): Promise<number> => {
+  try {
+    const res = await axios.post(HELIUS_API_URL, {
+      jsonrpc: "2.0",
+      id: "balance",
+      method: "getBalance",
+      params: [address],
+    });
+
+    const value = res.data?.result?.value || 0;
+    return value / 10 ** 9;
+  } catch (err) {
+    console.error("Erreur balance SOL:", err);
+    return 0;
+  }
+};
+
+export const fetchTransactionHistory = async (
+  walletAddress: string,
+  limit: number = 20
+) => {
+  // Intègre `limit` dans l'appel si nécessaire, ex :
+  const response = await axios.post(HELIUS_API_URL, {
+    jsonrpc: "2.0",
+    id: "getSignatures",
+    method: "getSignaturesForAddress",
+    params: [walletAddress, { limit }],
+  });
+
+  return response.data.result;
+};
+
+export const formatAssetsForDashboard = async (
+  items: any[],
+  solBalance: number
+) => {
+  // Exemple très simplifié
+  return [
+    {
+      symbol: "SOL",
+      amount: solBalance,
+    },
+    ...items.map((item) => ({
+      symbol: item.symbol,
+      amount: item.amount,
+    })),
+  ];
 };

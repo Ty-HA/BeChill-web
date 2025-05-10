@@ -2,100 +2,50 @@
 
 import { useEffect, useState } from "react";
 import { useLogin, usePrivy } from "@privy-io/react-auth";
-import { getParsedTokenBalances } from "@/services/heliusService";
+import { normalizeSolanaAddress } from "@/utils/walletAddressUtils";
 import Sidebar from "@/components/dashboard/SideBar";
 import Header from "@/components/dashboard/Header";
 import AssetsTab from "@/components/dashboard/tabs/AssetsTab";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import TestWalletButton from "@/components/dashboard/TestWalletButton";
 import ChatAdapter from "@/components/common/ChatAdapter";
-import { normalizeSolanaAddress } from "@/utils/walletAddressUtils";
+import { loadTokenMap } from "@/lib/tokenMap";
+import useHeliusData from "@/hooks/useHeliusData";
 
 const BeChillDashboard = () => {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [cryptoAssets, setCryptoAssets] = useState<any[]>([]);
   const [solPriceHistory, setSolPriceHistory] = useState<any[]>([]);
-  const [totalValue, setTotalValue] = useState(0);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [selectedTimeFrame, setSelectedTimeFrame] = useState("7J");
   const [manualAddress, setManualAddress] = useState("");
+
+  const {
+    assets: cryptoAssets,
+    transactions,
+    totalValue,
+    solBalance,
+    isLoading,
+    lastUpdated,
+    refreshData,
+  } = useHeliusData(walletAddress);
 
   const { user, ready } = usePrivy();
   const typedUser = user;
   const { login } = useLogin();
 
-  // ✅ Fonction de chargement principale
-  const loadOnchainData = async (address: string) => {
-    if (!address) return;
-    setIsLoading(true);
+  useEffect(() => {
+    loadTokenMap();
+  }, []);
 
-    try {
-      const tokens = await getParsedTokenBalances(address);
-
-      const enriched = await Promise.all(
-        tokens.map(async (token) => {
-          try {
-            const res = await fetch(
-              `https://37.187.141.70:8070/items/historical?filter[symbol][_eq]=${token.symbol}&sort=-datetime`
-            );
-            const json = await res.json();
-            const price = json.data?.[0]?.price_usd || 0;
-
-            return {
-              symbol: token.symbol,
-              balance: `${token.amount.toFixed(4)} ${token.symbol}`,
-              amount: token.amount,
-              valueEUR: token.amount * price,
-              unitPrice: price,
-            };
-          } catch {
-            return {
-              symbol: token.symbol,
-              balance: `${token.amount.toFixed(4)} ${token.symbol}`,
-              amount: token.amount,
-              valueEUR: 0,
-              unitPrice: 0,
-            };
-          }
-        })
-      );
-
-      const total = enriched.reduce((sum, a) => sum + a.valueEUR, 0);
-      setCryptoAssets(enriched);
-      setTotalValue(total);
-      setLastUpdated(new Date());
-
-      const resSol = await fetch(
-        "/api/directus-historical?filterType=symbol&filterValue=SOL&sort=-datetime"
-      );
-
-      const jsonSol = await resSol.json();
-      console.log("📊 Sol price history fetched:", jsonSol.data?.slice(0, 3));
-      setSolPriceHistory(
-        (jsonSol.data || []).map((entry: any) => ({
-          date: entry.datetime,
-          price_usd: entry.price_usd,
-        }))
-      );
-    } catch (e) {
-      console.error("💥 Load error:", e);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // ✅ Effet initial
+  // Effet initial : si connecté via Privy
   useEffect(() => {
     if (ready && typedUser?.wallet?.address) {
       const raw = typedUser.wallet.address;
-      setWalletAddress(raw);
       const normalized = normalizeSolanaAddress(raw);
-      if (normalized) loadOnchainData(normalized);
+      if (normalized) setWalletAddress(normalized);
     }
   }, [ready, typedUser]);
 
-  // Effet pour charger l'historique SOL au démarrage
+  // Charger l’historique du prix du SOL
   useEffect(() => {
     const loadSolanaHistory = async () => {
       try {
@@ -103,13 +53,8 @@ const BeChillDashboard = () => {
           "/api/directus-historical?filterType=symbol&filterValue=SOL&sort=-datetime"
         );
         const json = await res.json();
-
-        // 💡 Conversion en PricePoint[]
         const history = (json.data || [])
-          .filter(
-            (entry: any) =>
-              typeof entry.price_usd === "number" && entry.datetime
-          )
+          .filter((entry: any) => typeof entry.price_usd === "number" && entry.datetime)
           .map((entry: any) => ({
             date: entry.datetime,
             price_usd: entry.price_usd,
@@ -139,30 +84,27 @@ const BeChillDashboard = () => {
           activeTab="assets"
           walletAddress={walletAddress}
           isLoading={isLoading}
-          refreshData={() => walletAddress && loadOnchainData(walletAddress)}
+          refreshData={refreshData}
           isPrivyConnected={!!typedUser?.wallet?.address}
           manualAddress={manualAddress}
           setManualAddress={setManualAddress}
           onManualSearch={() => {
-            if (manualAddress) {
-              setWalletAddress(manualAddress);
-              loadOnchainData(manualAddress);
-            }
+            const normalized = normalizeSolanaAddress(manualAddress);
+            if (normalized) setWalletAddress(normalized);
           }}
         />
 
-        <TestWalletButton
-          walletAddress={manualAddress || walletAddress || undefined}
-        />
+        <TestWalletButton walletAddress={manualAddress || walletAddress || undefined} />
 
         {isLoading ? (
           <LoadingSpinner />
         ) : (
           <AssetsTab
             isLoading={isLoading}
-            refreshData={() => walletAddress && loadOnchainData(walletAddress)}
+            refreshData={refreshData}
             lastUpdated={lastUpdated}
             totalValue={totalValue}
+            solBalance={solBalance}
             selectedTimeFrame={selectedTimeFrame}
             setSelectedTimeFrame={setSelectedTimeFrame}
             cryptoAssets={cryptoAssets}

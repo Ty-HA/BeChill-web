@@ -14,7 +14,7 @@ interface PricePoint {
 
 interface Asset {
   symbol: string;
-  balance: string;
+  name: string;
   amount: number;
   valueEUR: number;
   unitPrice: number;
@@ -25,6 +25,7 @@ interface AssetsTabProps {
   refreshData: () => void;
   lastUpdated: Date | null;
   totalValue: number;
+  solBalance: number;
   selectedTimeFrame: string;
   setSelectedTimeFrame: (frame: string) => void;
   cryptoAssets: Asset[];
@@ -36,6 +37,7 @@ const AssetsTab: React.FC<AssetsTabProps> = ({
   refreshData,
   lastUpdated,
   totalValue,
+  solBalance,
   selectedTimeFrame,
   setSelectedTimeFrame,
   cryptoAssets,
@@ -43,13 +45,11 @@ const AssetsTab: React.FC<AssetsTabProps> = ({
 }) => {
   return (
     <div className="space-y-6">
-      {/* Top grid : Net Worth + Allocation */}
+      {/* Net Worth + Allocation */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Net Worth */}
         <div className="bg-white rounded-xl p-6 shadow-md">
-          <h2 className="text-lg font-bold text-gray-500 mb-2">
-            Total Net Worth
-          </h2>
+          <h2 className="text-lg font-bold text-gray-500 mb-2">Total Net Worth</h2>
           {isLoading ? (
             <LoadingSpinner />
           ) : (
@@ -72,13 +72,11 @@ const AssetsTab: React.FC<AssetsTabProps> = ({
               <div className="mt-6">
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-gray-600">
-                    ≈ {(totalValue / 100).toFixed(3)} SOL
+                    Solana: {solBalance.toFixed(4)} SOL
                   </span>
                   <span className="text-xs text-gray-400">
                     Dernière mise à jour:{" "}
-                    {isLoading
-                      ? "..."
-                      : lastUpdated?.toLocaleTimeString() || "-"}
+                    {isLoading ? "..." : lastUpdated?.toLocaleTimeString() || "-"}
                   </span>
                 </div>
                 <div className="flex space-x-2">
@@ -86,11 +84,11 @@ const AssetsTab: React.FC<AssetsTabProps> = ({
                     <button
                       key={frame}
                       onClick={() => setSelectedTimeFrame(frame)}
-                      className={`text-xs ${
+                      className={`text-xs px-2 py-1 rounded ${
                         selectedTimeFrame === frame
                           ? "bg-[#7036cd] text-white"
                           : "bg-gray-100 hover:bg-gray-200 text-gray-600"
-                      } px-2 py-1 rounded`}
+                      }`}
                     >
                       {frame}
                     </button>
@@ -113,7 +111,6 @@ const AssetsTab: React.FC<AssetsTabProps> = ({
                   assets={cryptoAssets}
                   totalValue={totalValue}
                 />
-
                 <div className="absolute inset-0 flex items-center justify-center flex-col pointer-events-none">
                   <div className="text-sm text-gray-500">Total</div>
                   <div className="text-2xl font-bold text-[#7036cd]">
@@ -123,17 +120,10 @@ const AssetsTab: React.FC<AssetsTabProps> = ({
               </div>
               <div className="mt-4 space-y-2">
                 {cryptoAssets.map((asset, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between"
-                  >
+                  <div key={index} className="flex items-center justify-between">
                     <div className="flex items-center">
-                      <div
-                        className={`w-3 h-3 rounded-full ${getAssetColor(
-                          asset.symbol
-                        )} mr-2`}
-                      />
-                      <span className="text-sm">{asset.symbol}</span>
+                      <div className={`w-3 h-3 rounded-full ${getAssetColor(asset.symbol)} mr-2`} />
+                      <span className="text-sm">{asset.name}</span>
                     </div>
                     <span className="text-sm">
                       {totalValue > 0
@@ -154,37 +144,18 @@ const AssetsTab: React.FC<AssetsTabProps> = ({
         <h2 className="text-lg font-bold text-gray-500 mb-4">
           SOL Price History
         </h2>
-        <div className="flex space-x-2 mb-4">
-  {["1J", "7J", "1M", "1A", "ALL"].map((frame) => (
-    <button
-      key={frame}
-      onClick={() => setSelectedTimeFrame(frame)}
-      className={`text-xs px-2 py-1 rounded ${
-        selectedTimeFrame === frame
-          ? "bg-[#7036cd] text-white"
-          : "bg-gray-100 hover:bg-gray-200 text-gray-600"
-      }`}
-    >
-      {frame}
-    </button>
-  ))}
-</div>
-
         {isLoading ? (
           <LoadingSpinner />
         ) : solPriceHistory.length > 0 ? (
-            <AssetGrowthChart
+          <AssetGrowthChart
             symbol="SOL"
             historicalPrices={solPriceHistory}
             selectedTimeFrame={selectedTimeFrame}
           />
-          
         ) : (
           <p className="text-gray-400">No data</p>
         )}
       </div>
-
-      <div className="mt-6"></div>
     </div>
   );
 };
