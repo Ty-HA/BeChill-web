@@ -4,6 +4,27 @@ import axios from "axios";
 const HELIUS_API_KEY = process.env.NEXT_PUBLIC_HELIUS_API_KEY || "";
 const HELIUS_API_URL = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
 
+export const getSolBalance = async (address: string): Promise<number> => {
+  try {
+    const response = await fetch(HELIUS_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "getBalance",
+        params: [address],
+      }),
+    });
+
+    const json = await response.json();
+    return json.result?.value / 10 ** 9 || 0;
+  } catch (err) {
+    console.error("❌ Erreur getSolBalance:", err);
+    return 0;
+  }
+};
+
 const TOKEN_MINT_TO_SYMBOL: Record<string, string> = {
   "So11111111111111111111111111111111111111112": "SOL",
   "JUP4Fb2cqiRUcaTHdrPC8h2gNsA2ETXiPDD33WcGuJB": "JUP",
@@ -93,14 +114,22 @@ export const getParsedTokenBalances = async (
 
 export const testWalletAddress = async (address: string) => {
   try {
-    const result = await refreshWalletData(address);
-    return result;
+    const solBalance = await getSolBalance(address);
+    const tokens = await getParsedTokenBalances(address);
+    console.log("📦 Tokens retournés par Helius:", tokens);
+
+    return {
+      success: true,
+      solBalance,
+      formattedAssets: tokens, // important !
+    };
+    
   } catch (error) {
-    console.error('[HELIUS] Test échoué:', error);
+    console.error("Test échoué", error);
     return {
       success: false,
       solBalance: 0,
-      message: "Échec du test Helius"
+      formattedAssets: [],
     };
   }
 };

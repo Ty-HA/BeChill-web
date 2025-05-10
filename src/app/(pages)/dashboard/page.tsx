@@ -25,9 +25,6 @@ const BeChillDashboard = () => {
   const typedUser = user;
   const { login } = useLogin();
 
-
-  
-
   // ✅ Fonction de chargement principale
   const loadOnchainData = async (address: string) => {
     if (!address) return;
@@ -69,7 +66,9 @@ const BeChillDashboard = () => {
       setTotalValue(total);
       setLastUpdated(new Date());
 
-      const resSol = await fetch("/api/directus-historical?filterType=symbol&filterValue=SOL&sort=-datetime");
+      const resSol = await fetch(
+        "/api/directus-historical?filterType=symbol&filterValue=SOL&sort=-datetime"
+      );
 
       const jsonSol = await resSol.json();
       console.log("📊 Sol price history fetched:", jsonSol.data?.slice(0, 3));
@@ -79,7 +78,6 @@ const BeChillDashboard = () => {
           price_usd: entry.price_usd,
         }))
       );
-      
     } catch (e) {
       console.error("💥 Load error:", e);
     } finally {
@@ -98,33 +96,34 @@ const BeChillDashboard = () => {
   }, [ready, typedUser]);
 
   // Effet pour charger l'historique SOL au démarrage
-useEffect(() => {
-  const loadSolanaHistory = async () => {
-    try {
-      const res = await fetch(
-        "/api/directus-historical?filterType=symbol&filterValue=SOL&sort=-datetime"
-      );
-      const json = await res.json();
+  useEffect(() => {
+    const loadSolanaHistory = async () => {
+      try {
+        const res = await fetch(
+          "/api/directus-historical?filterType=symbol&filterValue=SOL&sort=-datetime"
+        );
+        const json = await res.json();
 
-      // 💡 Conversion en PricePoint[]
-      const history = (json.data || [])
-        .filter((entry: any) => typeof entry.price_usd === "number" && entry.datetime)
-        .map((entry: any) => ({
-          date: entry.datetime,
-          price_usd: entry.price_usd,
-        }));
+        // 💡 Conversion en PricePoint[]
+        const history = (json.data || [])
+          .filter(
+            (entry: any) =>
+              typeof entry.price_usd === "number" && entry.datetime
+          )
+          .map((entry: any) => ({
+            date: entry.datetime,
+            price_usd: entry.price_usd,
+          }));
 
-      setSolPriceHistory(history);
-      console.log("✅ SOL Price History:", history.slice(0, 3));
-    } catch (e) {
-      console.error("🔴 Erreur chargement prix SOL:", e);
-    }
-  };
+        setSolPriceHistory(history);
+        console.log("✅ SOL Price History:", history.slice(0, 3));
+      } catch (e) {
+        console.error("🔴 Erreur chargement prix SOL:", e);
+      }
+    };
 
-  loadSolanaHistory();
-}, []);
-
-  
+    loadSolanaHistory();
+  }, []);
 
   return (
     <div className="min-h-screen flex bg-gradient-to-r from-[#DDDAF6] to-[#C6D9FF] font-serif">
@@ -152,7 +151,9 @@ useEffect(() => {
           }}
         />
 
-        <TestWalletButton walletAddress={walletAddress || undefined} />
+        <TestWalletButton
+          walletAddress={manualAddress || walletAddress || undefined}
+        />
 
         {isLoading ? (
           <LoadingSpinner />
