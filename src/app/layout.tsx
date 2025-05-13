@@ -1,5 +1,7 @@
 import './globals.css';
 import Providers from '@/components/common/Providers';
+import ConvexRootProvider from '@/components/common/ConvexRootProvider';
+
 
 export const metadata = {
   title: 'BeChill - Your Personal Asset Manager',
@@ -44,7 +46,8 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
         <ScrollRestorationScript />
       </head>
       <body suppressHydrationWarning={true}>
-        <Providers>{children}</Providers>
+        <Providers>
+          <ConvexRootProvider>{children}</ConvexRootProvider></Providers>
       </body>
     </html>
   );
