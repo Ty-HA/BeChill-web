@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+
+
 @font-face {
   font-family: 'DM Serif Text';
   src: url('/fonts/DMSerifText-Regular.ttf') format('truetype');
@@ -35,7 +37,7 @@
   /* BeChill Theme Colors */
   --lavender-light: #e8e6fa;
   --lavender-medium: #d3cff6;
-  --lavender-dark: #bcb7f2;
+  --lavender-dark: #540CCC;
   --yellow-accent: #FFFF4F;
   --purple-light: #7036cd;
   --purple-medium: #5c26b3;

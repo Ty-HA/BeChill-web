@@ -6,7 +6,8 @@ import HeroSection from "./sections/HeroSection";
 import { CardCarouselSection } from "./sections/CardCarouselSection";
 import ChatComponent from "@/components/common/ChatComponent";
 import { Footer } from "./Footer";
-import AnimatedClouds from "../common/AnimatedClouds"; // Import the new component
+import AnimatedClouds from "../common/AnimatedClouds";
+import MobileAppPromo from "./sections/MobileAppPromo";
 
 interface PrivyUser {
   wallet?: {
@@ -84,6 +85,7 @@ export default function LandingPage() {
         walletReviewed={walletReviewed}
       />
     <CardCarouselSection />
+    <MobileAppPromo />
 
         
       <section className="container mx-auto px-4 py-12 flex justify-center">

@@ -10,7 +10,8 @@ module.exports = {
           'lavender': {
             100: '#e8e6fa', // Fond principal du chat (plus clair)
             200: '#d3cff6', // En-tête du chat (moyen)
-            300: '#bcb7f2', // Bordures (plus foncé)
+            300: '#bcb7f2',
+            400:'#540CCC' 
           },
           'yellow': {
             300: '#fff568', // Couleur des bulles de message utilisateur

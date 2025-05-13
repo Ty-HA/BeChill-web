@@ -19,21 +19,22 @@ export default function HeroSection({
       <div className="flex flex-col items-center justify-center text-center w-full max-w-3xl">
         <div className="flex justify-center mb-6 items-center">
           <div className="flex justify-center mb-6 items-center">
-          <div className="relative mr-3">
-            <EmojiLogo size="md" trackMouse={true} />
+            <div className="relative mr-3">
+              <EmojiLogo size="md" trackMouse={true} />
+            </div>
+            <span className="text-4xl font-bold text-lavender-400">
+              beChill
+            </span>
           </div>
-          <span className="text-4xl font-bold text-purple-900">beChill</span>
-        </div>
-          
         </div>
 
-        <h1 className="md:text-6xl text-4xl font-bold mb-8 text-purple-900 font-serif">
+        <h1 className="md:text-6xl text-4xl font-bold mb-8 text-lavender-400 font-serif">
           <span className="block">Chill,</span>
           <span className="block">your personal asset manager</span>
           <span className="block">powered by Solana</span>
         </h1>
 
-        <p className="text-xl mb-10 text-purple-900 max-w-lg font-serif">
+        <p className="text-xl mb-10 text-lavender-400 max-w-lg font-serif">
           Take control of your digital assets with our AI-powered manager.
           Track, analyze, and optimize your portfolio with just a few clicks
         </p>
@@ -41,7 +42,8 @@ export default function HeroSection({
         {!userWallet ? (
           <button
             onClick={onLogin}
-            className="px-10 py-4 bg-purple-600 hover:bg-purple-700 text-white text-lg font-bold rounded-full shadow-lg transform transition hover:scale-105"
+            className="px-10 py-4 text-lg font-bold rounded-full shadow-lg transform transition hover:scale-105"
+            style={{ backgroundColor: "#540CCC", color: "#FFFF4F" }}
           >
             CONNECT WALLET
           </button>
