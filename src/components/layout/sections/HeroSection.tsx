@@ -1,4 +1,5 @@
 import Image from "next/image";
+import EmojiLogo from "@/components/common/EmojiLogo";
 
 type HeroSectionProps = {
   userWallet: string | null;
@@ -17,16 +18,13 @@ export default function HeroSection({
     <section className="container mx-auto px-4 py-16 min-h-10 flex items-center justify-center">
       <div className="flex flex-col items-center justify-center text-center w-full max-w-3xl">
         <div className="flex justify-center mb-6 items-center">
-          <div className="relative w-28 h-28 rounded-full flex items-center justify-center mr-3">
-            <Image
-              src="/img/bechill-head1.png"
-              alt="BeChill Logo"
-              fill
-              className="object-contain p-1"
-              priority
-            />
+          <div className="flex justify-center mb-6 items-center">
+          <div className="relative mr-3">
+            <EmojiLogo size="md" trackMouse={true} />
           </div>
           <span className="text-4xl font-bold text-purple-900">beChill</span>
+        </div>
+          
         </div>
 
         <h1 className="md:text-6xl text-4xl font-bold mb-8 text-purple-900 font-serif">

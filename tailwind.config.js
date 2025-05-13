@@ -19,7 +19,8 @@ module.exports = {
             600: '#7036cd', // Bouton de connexion
             700: '#5c26b3', // Hover du bouton de connexion
             900: '#36169e', // Texte foncé
-          }
+          },
+          'emoji-yellow': '#FFEB3B', 
         },
         fontFamily: {
           serif: ['"DM Serif Text"', 'serif'],
