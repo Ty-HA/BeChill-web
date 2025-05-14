@@ -1,7 +1,4 @@
 {
   "buildCommand": "next build",
-  "ignoreCommand": "echo 'Ignoring test routes'",
-  "excludeFiles": [
-    "app/_test-pages/**"
-  ]
+  "outputDirectory": ".next"
 }

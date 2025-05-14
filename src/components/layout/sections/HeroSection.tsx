@@ -22,16 +22,12 @@ export default function HeroSection({
             <div className="relative mr-3">
               <EmojiLogo size="md" trackMouse={true} />
             </div>
-            <span className="text-4xl font-bold text-lavender-400">
-              beChill
-            </span>
+           
           </div>
         </div>
 
-        <h1 className="md:text-6xl text-4xl font-bold mb-8 text-lavender-400 font-serif">
-          <span className="block">Chill,</span>
-          <span className="block">your personal asset manager</span>
-          <span className="block">powered by Solana</span>
+        <h1 className="md:text-6xl text-4xl mb-8 text-lavender-400 font-serif">
+          <span className="block">Talk to your wallet not a spreadsheet</span>
         </h1>
 
         <p className="text-xl mb-10 text-lavender-400 max-w-lg font-serif">
