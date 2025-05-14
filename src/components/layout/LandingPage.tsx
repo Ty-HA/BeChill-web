@@ -91,14 +91,7 @@ export default function LandingPage() {
       <section className="container mx-auto px-4 py-12 flex justify-center">
      
 
-      <ChatComponent
-          userWallet={typedUser?.wallet?.address || null}
-          className="w-full max-w-md shadow-lg"
-          onRequestWalletConnect={login}
-          onSendMessage={handleChatMessage}
-          initialMessages={savedMessages}
-          onMessagesUpdate={saveMessages}
-        />
+      
       </section>
       
       </div>
