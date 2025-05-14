@@ -5,7 +5,6 @@ const nextConfig: NextConfig = {
     HUGGINGFACE_API_KEY: process.env.HUGGINGFACE_API_KEY,
   },
   
-  // Utiliser le dossier standard
   distDir: '.next',
   
   async rewrites() {
@@ -15,35 +14,38 @@ const nextConfig: NextConfig = {
         destination: process.env.NODE_ENV === 'production'
           ? 'https://rpc1-taupe.vercel.app/api/:path*'
           : 'http://localhost:3001/api/:path*',
+      }
+    ];
+  },
+  
+  // En-têtes pour résoudre les problèmes CORS et COOP
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin-allow-popups',
+          },
+          {
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'require-corp',
+          },
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET,OPTIONS,PATCH,DELETE,POST,PUT',
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version',
+          }
+        ],
       },
-      
-      // En développement seulement, permettre l'accès aux pages de test
-      ...(process.env.NODE_ENV !== 'production' ? [
-        {
-          source: '/test-api-tester',
-          destination: '/_test-pages/test-api-tester',
-        },
-        {
-          source: '/test-dashboard',
-          destination: '/_test-pages/test-dashboard',
-        },
-        {
-          source: '/test-hf',
-          destination: '/_test-pages/test-hf',
-        },
-        {
-          source: '/test-sonarwatch',
-          destination: '/_test-pages/test-sonarwatch',
-        },
-        {
-          source: '/test-wallet-analyzer',
-          destination: '/_test-pages/test-wallet-analyzer',
-        },
-        {
-          source: '/tests',
-          destination: '/_test-pages',
-        }
-      ] : []),
     ];
   },
 };
