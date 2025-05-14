@@ -3,14 +3,16 @@ import React from 'react';
 interface LoadingSpinnerProps {
   size?: string;
   color?: string;
+  fullscreen?: boolean; // ⬅️ Optionnel si tu veux centrer dans toute la page
 }
 
 const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ 
   size = 'w-8 h-8', 
-  color = 'text-[#7036cd]' 
+  color = 'text-[#7036cd]',
+  fullscreen = false
 }) => {
   return (
-    <div className="flex justify-center items-center p-6">
+    <div className={`flex justify-center items-center ${fullscreen ? 'min-h-screen' : 'p-6'}`}>
       <div className={`${size} ${color} animate-spin`}>
         <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
