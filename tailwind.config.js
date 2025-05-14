@@ -26,7 +26,7 @@ module.exports = {
         fontFamily: {
           serif: ['"DM Serif Text"', 'serif'],
           monument: ['"PP Monument Extended"', 'sans-serif'],
-          sans: ['Arial', 'Helvetica', 'sans-serif'], 
+          sans: ['"DM Sans"', 'sans-serif'],
           poppins: ['Poppins', 'sans-serif'], 
         },
       },

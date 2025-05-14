@@ -156,7 +156,7 @@ const EmojiLogo: React.FC<EmojiLogoProps> = ({
     'w-full h-full rounded-full absolute',
     animated && !trackMouse && 'animate-face-bounce'
   )}
-  style={{ backgroundColor: '#FFD93B' }} // Jaune emoji
+  style={{ backgroundColor: '#FFFF4F' }} // Jaune emoji
 />
 
       

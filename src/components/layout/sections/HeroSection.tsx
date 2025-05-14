@@ -1,5 +1,5 @@
-import Image from "next/image";
 import EmojiLogo from "@/components/common/EmojiLogo";
+import WalletStatus from "@/components/common/WalletStatus";
 
 type HeroSectionProps = {
   userWallet: string | null;
@@ -12,52 +12,26 @@ export default function HeroSection({
   userWallet,
   onLogin,
   onLogout,
-  walletReviewed,
 }: HeroSectionProps) {
   return (
     <section className="container mx-auto px-4 py-16 min-h-10 flex items-center justify-center">
       <div className="flex flex-col items-center justify-center text-center w-full max-w-3xl">
         <div className="flex justify-center mb-6 items-center">
-          <div className="flex justify-center mb-6 items-center">
-            <div className="relative mr-3">
-              <EmojiLogo size="md" trackMouse={true} />
-            </div>
-           
+          <div className="relative mr-3">
+            <EmojiLogo size="md" trackMouse={true} />
           </div>
         </div>
 
-        <h1 className="md:text-6xl text-4xl mb-8 text-lavender-400 font-serif">
-          <span className="block">Talk to your wallet not a spreadsheet</span>
+        <h1 className="md:text-6xl text-4xl mb-8 text-lavender-400 font-serif font-normal">
+          <span className="block">Talk to your wallet</span>
+          <span>not a spreadsheet</span>
         </h1>
 
-        <p className="text-xl mb-10 text-lavender-400 max-w-lg font-serif">
-          Take control of your digital assets with our AI-powered manager.
-          Track, analyze, and optimize your portfolio with just a few clicks
+        <p className="text-4xl mb-10 text-lavender-400 font-sans font-light">
+          Real insights. Smart moves. Chill vibes only.
         </p>
 
-        {!userWallet ? (
-          <button
-            onClick={onLogin}
-            className="px-10 py-4 text-lg font-bold rounded-full shadow-lg transform transition hover:scale-105"
-            style={{ backgroundColor: "#540CCC", color: "#FFFF4F" }}
-          >
-            CONNECT WALLET
-          </button>
-        ) : (
-          <div className="space-y-4">
-            <div className="bg-white/80 backdrop-blur-sm px-6 py-3 rounded-lg inline-block shadow-sm">
-              <p className="text-lg text-purple-900">
-                ✅ Connected: {userWallet.slice(0, 6)}...{userWallet.slice(-4)}
-              </p>
-            </div>
-            <button
-              onClick={onLogout}
-              className="px-8 py-4 bg-red-600 hover:bg-red-700 text-white text-lg font-bold rounded-full shadow-lg transform transition hover:scale-105"
-            >
-              DISCONNECT
-            </button>
-          </div>
-        )}
+        <WalletStatus userWallet={userWallet} onLogin={onLogin} onLogout={onLogout} />
       </div>
     </section>
   );
