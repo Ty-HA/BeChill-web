@@ -8,12 +8,12 @@ export function CardCarouselSection() {
   const cards = [
     {
       id: 1,
-      text: "You swapped $3,200 last month... and paid $3,271 in gas. Almost a break-even DAO life.",
+      text: "Portfolio may dip, but your assets outperformance the market, it is still a win—own it!",
       bgColor: "bg-white",
     },
     {
       id: 2,
-      text: "You're 42% closer to your staking goal. Just a few more epochs to chill status.",
+      text: "You're 42% closer to your staking goal. Just a few more epochs to your 80 chill score goal.",
       bgColor: "bg-pink-100",
     },
     {
@@ -28,7 +28,7 @@ export function CardCarouselSection() {
     },
     {
       id: 5,
-      text: "Your net worth increased by one JPEG this month. Still alive, still rare.",
+      text: "Congrats on your gains! Lock in some now and take profits in tiers—nobody nails the top.",
       bgColor: "bg-blue-100",
     },
     {
