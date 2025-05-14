@@ -1,0 +1,7 @@
+{
+  "buildCommand": "next build",
+  "ignoreCommand": "echo 'Ignoring test routes'",
+  "excludeFiles": [
+    "app/(test-pages)/**"
+  ]
+}
