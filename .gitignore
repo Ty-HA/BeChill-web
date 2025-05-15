@@ -49,3 +49,6 @@ next-env.d.ts
 /output
 output/
 node_modules
+
+**/chatHistory.json
+/src/chat/chatHistory.json
