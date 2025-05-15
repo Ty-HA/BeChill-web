@@ -1,0 +1,44 @@
+{
+  "walletAddress": "FuRS2oiXnGvwabV7JYjBU1VQCa6aida7LDybt91xy1YH",
+  "generatedAt": "2025-05-15T11:11:44.568Z",
+  "summary": {
+    "totalTransactions": 0,
+    "uniquePlatforms": 0,
+    "uniqueActivityTypes": 0,
+    "uniqueTokens": 0,
+    "volumeTraded": "0.00",
+    "topVolumes": [],
+    "transactionPeriod": {
+      "firstTransaction": "N/A",
+      "lastTransaction": "N/A"
+    },
+    "averageGapBetweenActivities": "N/A",
+    "weekdayVsWeekend": {
+      "weekday": 0,
+      "weekend": 0,
+      "weekdayPercentage": "N/A",
+      "weekendPercentage": "N/A"
+    }
+  },
+  "platforms": {
+    "topPlatforms": [],
+    "mainPlatform": "N/A",
+    "allPlatforms": []
+  },
+  "activities": {
+    "mainActivityType": "N/A",
+    "activityBreakdown": []
+  },
+  "tokens": {
+    "topTokensByVolume": [],
+    "topTokensByTransactions": [],
+    "mostUsedToken": "N/A"
+  },
+  "tokenPairs": [],
+  "advanced": {
+    "valueRanges": {},
+    "totalValue": 0,
+    "averageTransactionValue": 0,
+    "activityValueByType": {}
+  }
+}

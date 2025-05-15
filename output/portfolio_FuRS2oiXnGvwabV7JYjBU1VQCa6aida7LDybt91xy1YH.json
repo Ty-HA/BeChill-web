@@ -1,0 +1,83 @@
+{
+  "success": true,
+  "data": {
+    "total_value": 154.66415383581267,
+    "native_balance": {
+      "amount": 868054254,
+      "balance": 0.868054254,
+      "token_price": 170.40577005100684,
+      "token_decimals": 9,
+      "token_name": "SOL",
+      "token_symbol": "SOL",
+      "token_icon": "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+      "value": 147.92145359892228
+    },
+    "tokens": [
+      {
+        "token_address": "3thcjdnbBsiLWKvQ2a5X5R5vA3TqGQiXCb6PHDTEpump",
+        "amount": 1000000000000,
+        "balance": 1000000,
+        "token_price": 0.000006525713386820871,
+        "token_decimals": 6,
+        "token_name": "FartRot",
+        "token_symbol": "FartRot",
+        "token_icon": "https://ipfs.io/ipfs/QmSB5jXhY99KBAjyCsAt3MPdzgJuCcFKaWsr5mXDUpCFAm",
+        "value": 6.525713386820871
+      },
+      {
+        "token_address": "BQvp4dQwVPAMeWFRYzMccaiQjBrz5FNSJ1shp2nipump",
+        "amount": 28091211521,
+        "balance": 28091.211521,
+        "token_price": 0.000006886058559623205,
+        "token_decimals": 6,
+        "token_name": "Oblivion",
+        "token_symbol": "Oblivion",
+        "token_icon": "https://ipfs.io/ipfs/QmULhPgH9XS9yA7BafkKdFwrVY18GaUct2kp3HREovykyJ",
+        "value": 0.19343772754436803
+      },
+      {
+        "token_address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "amount": 10238,
+        "balance": 0.010238,
+        "token_price": 1,
+        "token_decimals": 6,
+        "token_name": "USDC",
+        "token_symbol": "USDC",
+        "token_icon": "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
+        "value": 0.010238
+      },
+      {
+        "token_address": "93oQmcKUwVXeNL5tpvbu6YnSmMLkAU3En1MFJqqYpump",
+        "amount": 1000000000,
+        "balance": 1000,
+        "token_price": 0.000007338385394631195,
+        "token_decimals": 6,
+        "token_name": "Keiko The Killer Whale",
+        "token_symbol": "KEIKO",
+        "token_icon": "https://ipfs.io/ipfs/QmdemJA7E9VUDCwhd4qYFwyWhaVUbXqueGDG8Zc9dhM783",
+        "value": 0.007338385394631194
+      },
+      {
+        "token_address": "4u6VJ1VX8Z1i2GAVFAWxKyx3fsSecWkr52itAKgefyrQ",
+        "amount": 435,
+        "balance": 0.000435,
+        "token_price": 13.730430185109256,
+        "token_decimals": 6,
+        "token_name": "JProof",
+        "token_symbol": "JProof",
+        "token_icon": "https://pump.mypinata.cloud/ipfs/QmRLL5ogApcQ3MNMP9SfaU2WVSRHFDgSwUc7fe6fAXDKTs?img-width=100",
+        "value": 0.0059727371305225265
+      },
+      {
+        "token_address": "56LoAmvv6A1X5j9ETuRBDECJgKCWYUxn9juoRQCge1Np",
+        "amount": 86927385023,
+        "balance": 86927.385023,
+        "token_decimals": 6,
+        "token_name": "Raydium",
+        "token_symbol": "RAY",
+        "value": 0
+      }
+    ]
+  },
+  "metadata": {}
+}
