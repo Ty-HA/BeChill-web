@@ -204,15 +204,15 @@ export default function ChatPage() {
 
   // Convex API
   const sendMessage = useMutation(api.messages.sendMessage);
-const upsertProfile = useMutation(api.profile.upsertProfile);
+  const upsertProfile = useMutation(api.profile.upsertProfile);
 
-// Use the new getSessionMessages query instead of getMessages
-const messagesFromConvex = useQuery(api.messages.getSessionMessages, { 
-  profile, 
-  sessionId 
-});
+  // Use the new getSessionMessages query instead of getMessages
+  const messagesFromConvex = useQuery(api.messages.getSessionMessages, {
+    profile,
+    sessionId,
+  });
 
-    useEffect(() => {
+  useEffect(() => {
     setSessionId(Math.random().toString(36).substring(2, 15));
   }, []);
 
@@ -477,7 +477,6 @@ const messagesFromConvex = useQuery(api.messages.getSessionMessages, {
 
   // Initialiser en fonction du profil
   useEffect(() => {
-    setMessages([]);
     processingStepRef.current = false;
 
     const selectedProfile = profiles.find((p) => p.value === profile);
@@ -516,6 +515,14 @@ const messagesFromConvex = useQuery(api.messages.getSessionMessages, {
       }, 500);
     }
   }, [profile, messagesFromConvex]);
+
+  // Gérer la mise à jour du sessionId séparément
+  useEffect(() => {
+    // Générer un nouveau sessionId seulement au premier rendu
+    if (!sessionId) {
+      setSessionId(Math.random().toString(36).substring(2, 15));
+    }
+  }, []);
 
   // Défilement automatique vers le bas pour les nouveaux messages
   useEffect(() => {
@@ -687,13 +694,6 @@ const messagesFromConvex = useQuery(api.messages.getSessionMessages, {
 
             {/* Chat area */}
             <div className="flex-1 overflow-y-auto px-4 space-y-4 pb-4 scrollbar-hide">
-              {messages.length === 0 && !isOnboarding && (
-                <div className="h-full flex flex-col items-center justify-center text-gray-400">
-                  <div className="text-5xl mb-2">👋</div>
-                  <p>Say hello to CHILL!</p>
-                </div>
-              )}
-
               {messages.map((m, i) => (
                 <div
                   key={i}
