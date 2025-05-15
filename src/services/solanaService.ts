@@ -1,18 +1,18 @@
 // src/services/solanaService.ts
 
-// Type pour les résultats d'analyse Solana
+// Type for Solana analysis results
 interface SolanaAnalysisResult {
   success: boolean;
   data?: any;
   error?: string;
 }
 
-// Cache pour éviter les appels redondants
+// Cache to avoid redundant calls
 const processedAddresses = new Map<string, any>();
 
 /**
- * Service centralisé pour les appels Solana
- * Ce service s'assure qu'un appel n'est effectué qu'une seule fois par adresse
+ * Centralized service for Solana API calls
+ * This service ensures each address is only fetched once
  */
 export class SolanaService {
   private baseUrl: string;
@@ -22,16 +22,16 @@ export class SolanaService {
     this.baseUrl += "/api/solscan";
   }
 
-  // Récupère uniquement les tokens pour une adresse
+  // Fetches only the tokens for a given address
   async getTokens(address: string): Promise<any> {
-    // Vérifier si l'adresse est déjà dans le cache
+    // Check if the address is already cached
     if (processedAddresses.has(`tokens-${address}`)) {
-      console.log(`Retour du cache pour tokens: ${address}`);
+      console.log(`Returning cached tokens for: ${address}`);
       return processedAddresses.get(`tokens-${address}`);
     }
 
     try {
-      console.log(`Fetching tokens pour: ${address}`);
+      console.log(`Fetching tokens for: ${address}`);
       const response = await fetch(`${this.baseUrl}/tokens?address=${address}`, {
         method: 'GET',
         headers: { 'Cache-Control': 'no-cache' }
@@ -43,31 +43,31 @@ export class SolanaService {
       }
 
       const data = await response.json();
-      
-      // Stocker dans le cache
+
+      // Store in cache
       processedAddresses.set(`tokens-${address}`, data);
-      
+
       return data;
     } catch (error) {
-      console.error("Erreur lors de la récupération des tokens:", error);
+      console.error("Error while fetching tokens:", error);
       throw error;
     }
   }
 
-  // Méthode pour analyser une adresse Solana
+  // Method to analyze a Solana address
   async analyzeAddress(address: string): Promise<SolanaAnalysisResult> {
-    // Valider l'adresse Solana
+    // Validate the Solana address
     if (!address.match(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/)) {
       return {
         success: false,
-        error: "Format d'adresse Solana invalide"
+        error: "Invalid Solana address format"
       };
     }
 
     try {
-      // Récupérer uniquement les tokens
+      // Fetch only the tokens
       const tokens = await this.getTokens(address);
-      
+
       return {
         success: true,
         data: {
@@ -77,47 +77,47 @@ export class SolanaService {
         }
       };
     } catch (error) {
-      console.error("Erreur d'analyse d'adresse:", error);
+      console.error("Error analyzing address:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Erreur inconnue"
+        error: error instanceof Error ? error.message : "Unknown error"
       };
     }
   }
 
-  // Méthode pour formater les résultats pour le LLM
+  // Method to format the results for the LLM
   formatTokensForLLM(result: SolanaAnalysisResult): string {
     if (!result.success || !result.data) {
-      return `Erreur lors de l'analyse: ${result.error || "Données indisponibles"}`;
+      return `Error during analysis: ${result.error || "Data unavailable"}`;
     }
 
     const { tokens, address } = result.data;
 
-    // Vérifier si les tokens sont disponibles
+    // Check if tokens are available
     if (!tokens || tokens.length === 0) {
-      return `Aucun token trouvé pour l'adresse ${address}.`;
+      return `No tokens found for address ${address}.`;
     }
 
-    // Formater les informations des tokens
-    let formattedText = `# Tokens trouvés pour l'adresse ${address}\n\n`;
+    // Format the token information
+    let formattedText = `# Tokens found for address ${address}\n\n`;
 
     tokens.forEach((token: any, index: number) => {
-      formattedText += `## Token ${index + 1}: ${token.symbol || 'Inconnu'}\n`;
-      formattedText += `- Nom: ${token.name || 'Non spécifié'}\n`;
-      formattedText += `- Quantité: ${token.amount || '0'}\n`;
-      
+      formattedText += `## Token ${index + 1}: ${token.symbol || 'Unknown'}\n`;
+      formattedText += `- Name: ${token.name || 'Not specified'}\n`;
+      formattedText += `- Amount: ${token.amount || '0'}\n`;
+
       if (token.usdValue) {
-        formattedText += `- Valeur estimée: $${parseFloat(token.usdValue).toFixed(2)}\n`;
+        formattedText += `- Estimated value: $${parseFloat(token.usdValue).toFixed(2)}\n`;
       }
-      
+
       formattedText += '\n';
     });
 
-    formattedText += "Que souhaitez-vous savoir d'autre sur ces tokens?";
+    formattedText += "What else would you like to know about these tokens?";
     return formattedText;
   }
 }
 
-// Exporter une instance unique
+// Export a single instance
 export const solanaService = new SolanaService();
 export default solanaService;

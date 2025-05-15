@@ -45,9 +45,29 @@ export async function POST(req: NextRequest) {
 // Simulated function to generate an AI response
 // Replace with your actual API call
 async function generateAIResponse(userInput: string, profileName: string): Promise<string> {
-  // Simulate a processing delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  // Default response - replace with your actual API call
-  return `I'm CHILL and I received your message: "${userInput}". I'm responding as a "crypto assistant".`;
+  try {
+    const response = await fetch("http://localhost:11434/api/generate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "llama3", // ou le nom exact de ton modèle
+        prompt: `You are CHILL, a helpful crypto portfolio assistant. A user named ${profileName} asked:\n\n${userInput}\n\nGive a clear and concise answer.`,
+        stream: false
+      })
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Ollama error: ${response.status} ${text}`);
+    }
+
+    const data = await response.json();
+    return data.response.trim();
+  } catch (error) {
+    console.error("Ollama LLM error:", error);
+    return "I'm having trouble accessing my brain right now. Try again in a bit.";
+  }
 }
+
