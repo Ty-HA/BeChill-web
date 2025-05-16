@@ -30,7 +30,7 @@ export default function FollowUsOnTwitter() {
       </h3>
 
       <a
-        href="https://twitter.com/bechilxyz"
+        href="https://twitter.com/bechillxyz"
         target="_blank"
         rel="noopener noreferrer"
         className="flex items-center gap-2 px-5 py-2 rounded-full bg-lavender-400 text-white font-bold shadow hover:bg-blue-700 transition"
