@@ -46,7 +46,7 @@ export default function ContactForm() {
           {status === "loading" ? "Sending..." : "Notify me"}
         </button>
         {status === "success" && (
-          <p className="text-green-600 text-center font-sans">Thank you! We'll notify you when BeChill mobile launches</p>
+          <p className="text-lavender-400 text-center font-sans">Thank you! We'll notify you when BeChill mobile launches</p>
         )}
         {status === "error" && (
           <p className="text-red-600 text-center font-sans">Error. Please try again later.</p>
