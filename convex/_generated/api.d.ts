@@ -14,6 +14,7 @@ import type {
   FunctionReference,
 } from "convex/server";
 import type * as actions_reset_messages from "../actions/reset_messages.js";
+import type * as contact from "../contact.js";
 import type * as messages from "../messages.js";
 import type * as profile from "../profile.js";
 
@@ -27,6 +28,7 @@ import type * as profile from "../profile.js";
  */
 declare const fullApi: ApiFromModules<{
   "actions/reset_messages": typeof actions_reset_messages;
+  contact: typeof contact;
   messages: typeof messages;
   profile: typeof profile;
 }>;

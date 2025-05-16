@@ -11,7 +11,8 @@ module.exports = {
             100: '#e8e6fa', // Fond principal du chat (plus clair)
             200: '#d3cff6', // En-tête du chat (moyen)
             300: '#bcb7f2',
-            400:'#540CCC' 
+            400:'#540CCC',
+            500: '#350A6A',
           },
           'yellow': {
             300: '#fff568', // Couleur des bulles de message utilisateur
