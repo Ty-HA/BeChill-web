@@ -23,7 +23,7 @@ export default function ContactForm() {
   };
 
   return (
-    <section className="max-w-md mx-auto my-20 p-8 rounded-2xl shadow-lg bg-white">
+    <section className="max-w-md mx-4 md:mx-auto my-20 p-8 rounded-2xl shadow-lg bg-white">
       <h2 className="text-4xl font-bold mb-2 text-center font-serif">BeChill Mobile</h2>
       <h2 className="text-4xl font-bold mb-4 text-center font-serif">Launch 🚀</h2>
       <p className="mb-6 text-center text-gray-600 font-sans text-xl">Enter your email to be notified when our mobile app launches!</p>
