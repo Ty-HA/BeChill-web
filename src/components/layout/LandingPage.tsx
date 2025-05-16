@@ -51,7 +51,7 @@ export default function LandingPage() {
     <PrivyGate>
       <main className="min-h-screen relative overflow-hidden">
         <AnimatedClouds />
-        <div className="relative z-10">
+        <div className="relative z-10 mt-14">
           <HeroSection
             userWallet={typedUser?.wallet?.address || null}
             onLogin={login}

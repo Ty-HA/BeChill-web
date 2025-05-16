@@ -110,7 +110,7 @@ export function CardCarouselSection() {
   );
 
   return (
-    <div ref={ref} className="font-sans text-xl font-light overflow-x-hidden relative py-4">
+    <div ref={ref} className="font-sans text-xl font-light overflow-x-hidden relative md:py-4 py-2 mt-8">
       <div className="space-y-4">
         {/* Ligne 1 */}
         <div className="overflow-visible">
@@ -125,36 +125,14 @@ export function CardCarouselSection() {
 
       <div className="text-center mt-16 mb-2 mx-4">
         <motion.p
-          className="text-xl font-semibold"
+          className="text-2xl mb-8 md:text-3xl md:mb-4 text-lavender-400 font-sans font-light"
           initial={{ y: -20, opacity: 0 }}
           whileInView={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.6 }}
         >
           Finally — crypto vibes that don’t wreck your peace of mind.
         </motion.p>
-        <motion.div
-          className="mt-6 flex justify-center"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-        >
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            className="animate-bounce"
-          >
-            <path
-              d="M12 5V19M12 19L5 12M12 19L19 12"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </motion.div>
+       
       </div>
     </div>
   );

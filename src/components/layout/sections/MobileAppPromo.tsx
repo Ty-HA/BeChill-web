@@ -4,8 +4,9 @@ import Image from "next/image";
 
 export default function MobileAppPromo() {
   return (
-    <section className="container mx-auto px-4 py-16 text-center">
-      <h2 className="text-3xl font-bold mb-8 font-serif">📱 Coming soon</h2>
+    <section className="container mx-auto px-4 py-8 text-center">
+      <h2 className="md:text-6xl text-4xl mb-2 text-lavender-400 font-serif font-normal">Coming soon</h2>
+      <h2 className="md:text-6xl text-4xl mb-12 text-lavender-400 font-serif font-normal">BeChill mobile launch 🚀</h2>
 
       {/* Responsive layout: vertical on mobile, overlapping horizontal on desktop */}
       <div className="flex flex-col md:flex-row items-center justify-center md:space-x-6 space-y-6 md:space-y-0">

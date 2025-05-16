@@ -2,11 +2,10 @@ import Link from "next/link";
 
 export function Footer() {
   return (
-    <footer className="bg-transparent mt-20">
-      <div className="container mx-auto px-4 py-10 text-center text-purple-900/80 text-sm space-y-4">
+    <footer className="w-full bg-lavender-400 mt-24" style={{ backgroundColor: "#3C0891" }}>
+      <div className="mx-auto px-4 py-16 text-center text-white text-sm space-y-4 font-sans">
         <p>© 2025 BeChill. All rights reserved. Powered by Solana.</p>
-
-        <div className="flex justify-center gap-4 text-xs text-purple-800/70">
+        <div className="text-white flex justify-center gap-4 text-xs">
           <Link href="/legal-notice" className="hover:underline">
             Legal Notice
           </Link>
@@ -23,3 +22,4 @@ export function Footer() {
     </footer>
   );
 }
+

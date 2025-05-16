@@ -11,8 +11,8 @@ const JoinTheWaitingListButton: React.FC = () => {
   return (
     <button
       onClick={handleClick}
-      className="px-8 py-2 bg-lavender-400 hover:bg-lavender-500 text-purple-900 text-lg font-bold rounded-full shadow-lg transition hover:scale-105"
-      style= {{ backgroundColor: "#540CCC", color: "#FFFF4F" }}
+      className="cursor-pointer font-Monument font-semibold px-4 py-1 text-xs md:text-sm rounded-full shadow-xs transition hover:scale-105 tracking-wider uppercase"
+      style={{ backgroundColor: "#540CCC", color: "#FFFF4F" }}
     >
       Join the waitlist
     </button>

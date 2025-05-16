@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import EmojiLogo from "@/components/common/EmojiLogo";
+import { motion } from "framer-motion";
 import WalletStatus from "@/components/common/WalletStatus";
 import ConnectWalletButton from "@/components/common/ConnectWalletButton";
 import JoinTheWaitingListButton from "@/components/common/JoinTheWaitingListButton";
@@ -32,13 +33,17 @@ export default function HeroSection({
           <span className="block">Talk to your wallet</span>
           <span>not a spreadsheet</span>
         </h1>
+        <motion.p
+          className="text-2xl mb-8 md:text-3xl md:mb-12 text-lavender-400 font-sans font-light"
+          initial={{ y: -20, opacity: 0 }}
+          whileInView={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.6 }}
+        >
+          Real insights. Smart moves. Chill vibes only.
+        </motion.p>
 
-        <h2 className="text-2xl mb-1 md:text-3xl md:mb-2 text-lavender-400 font-sans font-light">
-          Real insights. Smart moves.
-        </h2>
-        <h2 className="text-2xl md:text-3xl mb-10 text-lavender-400 font-sans font-light">
-          Chill vibes only.
-        </h2> 
+
+
         <JoinTheWaitingListButton/>
       </div>
     </section>
