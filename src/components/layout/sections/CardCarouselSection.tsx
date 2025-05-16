@@ -110,7 +110,7 @@ export function CardCarouselSection() {
   );
 
   return (
-    <div ref={ref} className="font-serif font-normal overflow-x-hidden relative py-4">
+    <div ref={ref} className="font-sans text-xl font-light overflow-x-hidden relative py-4">
       <div className="space-y-4">
         {/* Ligne 1 */}
         <div className="overflow-visible">
@@ -123,7 +123,7 @@ export function CardCarouselSection() {
         </div>
       </div>
 
-      <div className="text-center mt-16 mb-2">
+      <div className="text-center mt-16 mb-2 mx-4">
         <motion.p
           className="text-xl font-semibold"
           initial={{ y: -20, opacity: 0 }}

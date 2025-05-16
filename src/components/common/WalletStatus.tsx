@@ -1,4 +1,3 @@
-// components/common/WalletStatus.tsx
 import React from "react";
 import ConnectWalletButton from "./ConnectWalletButton";
 
@@ -9,9 +8,21 @@ interface WalletStatusProps {
 }
 
 const WalletStatus: React.FC<WalletStatusProps> = ({ userWallet, onLogin, onLogout }) => {
-  if (!userWallet) {
-    return <ConnectWalletButton onClick={onLogin} />;
-  }
+ if (!userWallet) {
+  return (
+    <div className="space-y-2">
+      <ConnectWalletButton
+        onClick={() => {}}
+        disabled={true}
+        label="Connect Wallet"
+      />
+      <p className="text-purple-900 text-sm text-center font-medium mt-2">
+        Coming soon
+      </p>
+    </div>
+  );
+}
+
 
   return (
     <div className="space-y-4">

@@ -1,5 +1,4 @@
-
-    function XIcon({ className = "w-8 h-8" }) {
+function XIcon({ className = "w-8 h-8" }) {
   return (
     <svg
       className={className}
@@ -17,27 +16,22 @@
   );
 }
 
-  
-
 export default function FollowUsOnTwitter() {
   return (
     <section className="max-w-md mx-auto mt-8 flex flex-col items-center gap-4">
-      <h3 className="flex items-center gap-1 text-4xl font-semibold font-serif">
-        Follow us on
-        <span className="inline-flex items-center">
-          <XIcon className="w-10 h-10 ml-2" />
-        </span>
-      </h3>
+    <span className="inline-flex items-center">
+  <a
+    href="https://twitter.com/bechillxyz"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="flex items-center gap-2" // Flex horizontal, gap entre texte et icône
+  >
+    <span className="text-4xl font-semibold font-serif">Follow us on</span>
+    <XIcon />
+  </a>
+</span>
 
-      <a
-        href="https://twitter.com/bechillxyz"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-2 px-5 py-2 rounded-full bg-lavender-400 text-white font-bold shadow hover:bg-blue-700 transition"
-        style={{ backgroundColor: "#540CCC", color: "#FFFF4F" }} // Couleur personnalisée
-      >
-        @bechillxyz
-      </a>
+
       <p className="text-gray-600 text-xl text-center font-sans text-lavender-400">
         Stay tuned for the latest updates!
       </p>
