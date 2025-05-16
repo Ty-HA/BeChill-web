@@ -25,7 +25,7 @@ export default function HeroSection({
       <div className="flex flex-col items-center justify-center text-center w-full max-w-3xl">
         <div className="flex justify-center mb-6 items-center">
           <div className="relative mr-3">
-            <EmojiLogo size="md" trackMouse={true} />
+            <EmojiLogo size="lg" trackMouse={true} />
           </div>
         </div>
 
