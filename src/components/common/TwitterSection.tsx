@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 export default function FollowUsOnTwitter() {
   return (
     <section className="container mx-auto px-4 py-14 min-h-10 items-center justify-center flex flex-col">
-      <span className="inline-flex items-center shadow-xs transition hover:scale-105 tracking-wider">
+      <span className="inline-flex items-center transition hover:scale-105 tracking-wider">
   <a
     href="https://twitter.com/bechillxyz"
     target="_blank"
