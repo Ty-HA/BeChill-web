@@ -80,7 +80,7 @@ export default function ContactForm() {
           onSubmit={handleSubmit}
           className="flex flex-col gap-4 w-full"
         >
-          <motion.input
+          <input
             id="email"
             type="email"
             required
@@ -88,23 +88,18 @@ export default function ContactForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@email.com"
-            variants={fadeInUp}
+            
           />
-          <motion.button
+          <button
             type="submit"
             className="text-xs md:text-sm text-white py-3 font-monument font-bold rounded-3xl uppercase cursor-pointer shadow-xs transition tracking-wider"
             style={{ backgroundColor: "#540CCC", color: "#FFFF4F" }}
             disabled={status === "loading"}
-            variants={btnPop}
-            whileHover={{
-              scale: 1.06,
-              boxShadow: "0 0 0.8rem #FFFF4F",
-              transition: { type: "spring", stiffness: 250, damping: 14 },
-            }}
-            whileTap={{ scale: 0.97 }}
+            
+            
           >
             {status === "loading" ? "Sending..." : "Notify me"}
-          </motion.button>
+          </button>
         </form>
 
         {status === "success" && (
