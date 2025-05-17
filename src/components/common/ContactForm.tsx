@@ -63,7 +63,7 @@ export default function ContactForm() {
         initial="hidden"
         whileInView="show"
         variants={fadeInUp}
-        viewport={{ once: true, amount: 0.6 }}
+        viewport={{ once: true, amount: 0.1 }}
       >
         Enter your email to be notified when our mobile app launches!
       </motion.p>
@@ -74,7 +74,7 @@ export default function ContactForm() {
         variants={parentVariants}
         initial="hidden"
         whileInView="show"
-        viewport={{ once: true, amount: 0.6 }}
+        viewport={{ once: true, amount: 0.2 }}
       >
         <form
           onSubmit={handleSubmit}

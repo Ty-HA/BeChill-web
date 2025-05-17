@@ -20,7 +20,7 @@ export default function FollowUsOnTwitter() {
         variants={fadeInUp}
         initial="hidden"
         whileInView="show"
-        viewport={{ once: true, amount: 0.6 }}
+        viewport={{ once: true, amount: 0.1 }}
         style={{ textDecoration: "none" }}
       >
         <span className="md:text-6xl text-4xl text-lavender-400 font-serif font-normal align-baseline">
@@ -38,7 +38,7 @@ export default function FollowUsOnTwitter() {
         initial={{ opacity: 0, y: 28 }}
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.65, delay: 0.28, ease: "easeOut" }}
-        viewport={{ once: true, amount: 0.6 }}
+        viewport={{ once: true, amount: 0.1 }}
       >
         Stay tuned for the latest updates!
       </motion.p>

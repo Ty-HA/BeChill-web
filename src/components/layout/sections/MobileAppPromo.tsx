@@ -28,7 +28,7 @@ export default function MobileAppPromo() {
         variants={parentVariants}
         initial="hidden"
         whileInView="show"
-        viewport={{ once: true, amount: 0.5 }}
+        viewport={{ once: true, amount: 0.1 }}
       >
         <motion.h2
           className="md:text-6xl text-4xl mb-2 text-lavender-400 font-serif font-normal"
