@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import WalletStatus from "@/components/common/WalletStatus";
 import ConnectWalletButton from "@/components/common/ConnectWalletButton";
 import JoinTheWaitingListButton from "@/components/common/JoinTheWaitingListButton";
-import { J } from "vitest/dist/chunks/reporters.d.DG9VKi4m.js";
 
 type HeroSectionProps = {
   userWallet: string | null;
@@ -13,6 +12,24 @@ type HeroSectionProps = {
   walletReviewed: boolean;
 };
 
+const h1Parent = {
+  hidden: {},
+  show: {
+    transition: {
+      staggerChildren: 0.18,
+    },
+  },
+};
+
+const h1Child = {
+  hidden: { opacity: 0, y: 30, scale: 0.97 },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.7, ease: "easeOut" },
+  },
+};
 
 export default function HeroSection({
   userWallet,
@@ -29,10 +46,20 @@ export default function HeroSection({
           </div>
         </div>
 
-        <h1 className="md:text-6xl text-4xl mb-8 text-lavender-400 font-serif font-normal">
-          <span className="block">Talk to your wallet</span>
-          <span>not a spreadsheet</span>
-        </h1>
+        <motion.h1
+          className="md:text-6xl text-4xl mb-8 text-lavender-400 font-serif font-normal"
+          variants={h1Parent}
+          initial="hidden"
+          animate="show"
+        >
+          <motion.span className="block" variants={h1Child}>
+            Talk to your wallet
+          </motion.span>
+          <motion.span variants={h1Child}>
+            not a spreadsheet
+          </motion.span>
+        </motion.h1>
+
         <motion.p
           className="text-2xl mb-8 md:text-3xl md:mb-12 text-lavender-400 font-sans font-light"
           initial={{ y: -20, opacity: 0 }}
@@ -42,9 +69,7 @@ export default function HeroSection({
           Real insights. Smart moves. Chill vibes only.
         </motion.p>
 
-
-
-        <JoinTheWaitingListButton/>
+        <JoinTheWaitingListButton />
       </div>
     </section>
   );
